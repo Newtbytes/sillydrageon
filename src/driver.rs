@@ -15,7 +15,7 @@ pub enum CompilePhase {
 }
 
 
-fn preprocess(src_fn: &str) -> io::Result<String> {
+pub fn preprocess(src_fn: &str) -> io::Result<String> {
     let dst_fn = src_fn.replace(".c", ".i");
 
     Command::new(CC)
@@ -27,32 +27,25 @@ fn preprocess(src_fn: &str) -> io::Result<String> {
 
         .output()?;
 
-    let mut f = File::open(&dst_fn)?;
-
-    let mut src = String::new();
-    f.read_to_string(&mut src)?;
-
-    fs::remove_file(dst_fn)?;
-
-    return Ok(src);
+    return Ok(dst_fn);
 }
 
-fn compile(src: String) -> String {
+pub fn compile(src_fn: String) -> String {
     // stub
-    return src;
+    return src_fn;
 }
 
-fn assemble(src_fn: &str, dst_fn: &str) -> io::Result<()> {
-    assert!(src_fn.ends_with(".s"));
+pub fn assemble(src_fn: String) -> io::Result<String> {
+    let dst_fn = src_fn.replace(".i", ".S");
 
     Command::new(CC)
         .arg(src_fn)
         .arg("-o")
-        .arg(dst_fn)
+        .arg(&dst_fn)
 
         .output()?;
 
-    return Ok(());
+    return Ok(dst_fn);
 }
 
 pub fn test_phase(src_fn: &str, phase: CompilePhase) -> Result<(), &'static str> {
