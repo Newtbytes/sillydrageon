@@ -48,6 +48,21 @@ pub fn assemble(src_fn: String) -> io::Result<String> {
     return Ok(dst_fn);
 }
 
+pub fn cleanup(src_fn: String) -> io::Result<()> {
+    let pp_fn = src_fn.replace(".c", ".i");
+    let asm_fn = src_fn.replace(".c", ".S");
+
+    if fs::exists(&pp_fn)? {
+        fs::remove_file(&pp_fn)?;
+    }
+
+    if fs::exists(&asm_fn)? {
+        fs::remove_file(&asm_fn)?;
+    }
+
+    return Ok(());
+}
+
 pub fn test_phase(src_fn: &str, phase: CompilePhase) -> Result<(), &'static str> {
     match phase {
         CompilePhase::Tokenization => Ok(()),
