@@ -65,6 +65,13 @@ pub fn next_token(src: &mut Peekable<str::Chars>) -> Option<Token> {
 
             c if c.is_ascii_digit() => {
                 let v: String = eat_while(src, |&c| c.is_ascii_digit()).collect();
+
+                if let Some(c) = src.peek() {
+                    if c.is_alphanumeric() {
+                        panic!("Lexer error");
+                    }
+                }
+
                 Constant((c.to_string() + &v).parse().unwrap())
             }
 
