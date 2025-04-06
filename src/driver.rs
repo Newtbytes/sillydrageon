@@ -2,9 +2,7 @@ use std::fs;
 use std::io;
 use std::process::Command;
 
-
 const CC: &str = "gcc";
-
 
 pub fn preprocess(src_fn: &str) -> io::Result<String> {
     let dst_fn = src_fn.replace(".c", ".i");
@@ -15,7 +13,6 @@ pub fn preprocess(src_fn: &str) -> io::Result<String> {
         .arg(src_fn)
         .arg("-o")
         .arg(&dst_fn)
-
         .output()?;
 
     return Ok(dst_fn);
@@ -33,7 +30,6 @@ pub fn assemble(src_fn: String) -> io::Result<String> {
         .arg(src_fn)
         .arg("-o")
         .arg(&dst_fn)
-
         .output()?;
 
     return Ok(dst_fn);
