@@ -1,6 +1,6 @@
 use std::fs;
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 
 mod driver;
 mod lexer;
@@ -9,37 +9,29 @@ mod lexer;
 struct Cli {
     input: String,
 
-    phase: Option<TestPhase>,
-}
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    lex: bool,
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum TestPhase {
-    Lex,
-    Parse,
-    Codegen,
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    parse: bool,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    codegen: bool,
 }
 
 fn main() {
     let cli: Cli = Cli::parse();
     let input_fn = cli.input;
 
-    // stub
-    if let Some(phase) = cli.phase {
-        match phase {
-            TestPhase::Lex => (),
-            TestPhase::Parse => (),
-            TestPhase::Codegen => (),
-        }
-
-        std::process::exit(0);
-    }
-
     let src = driver::preprocess(&input_fn).expect("Error runnning preprocessor on file.");
     let src = fs::read_to_string(src).expect("Error reading preprocessed source code.");
 
     let tokens = lexer::tokenize(src);
 
-    dbg!(tokens);
+    if cli.lex {    
+        dbg!(tokens);
+        std::process::exit(0);
+    }
 
     // let asm_fn = driver::compile(src);
 
