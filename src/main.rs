@@ -45,7 +45,7 @@ fn main() {
     if cli.parse {
         match ast {
             Ok(ast) => dbg!(ast),
-            Err(msg) => panic!("{}", msg)
+            Err(msg) => panic!("{}", msg),
         };
 
         close(&input_fn);

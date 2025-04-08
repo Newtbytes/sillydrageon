@@ -1,6 +1,5 @@
 use crate::lexer::{Token, TokenKind};
 
-
 #[derive(Debug)]
 pub enum Expr {
     Constant(u32),
@@ -14,7 +13,6 @@ pub enum Stmt {
 }
 
 type ParseResult<T> = Result<T, String>;
-
 
 fn expect<T: Iterator<Item = Token>>(expected: TokenKind, tokens: &mut T) -> ParseResult<Token> {
     match tokens.next() {
@@ -35,7 +33,7 @@ fn parse_statement<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stm
 
 fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
     let value = expect(TokenKind::Constant, tokens)?;
-    
+
     return Ok(Expr::Constant(value.value.parse().unwrap()));
 }
 
@@ -64,7 +62,10 @@ pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
     let prg = parse_program(tokens)?;
 
     if let Some(tok) = tokens.next() {
-        return Err(format!("Expected end of program, but got {:?} '{}'", tok.kind, tok.value));
+        return Err(format!(
+            "Expected end of program, but got {:?} '{}'",
+            tok.kind, tok.value
+        ));
     }
 
     return Ok(prg);
