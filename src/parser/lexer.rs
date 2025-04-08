@@ -77,7 +77,7 @@ impl Iterator for Scanner<'_> {
 
                 ';' => Semicolon,
 
-                c if matches!(c, 'a'..='z' | 'A'..='Z' | '_') => {
+                'a'..='z' | 'A'..='Z' | '_' => {
                     self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
 
                     // handle keywords
