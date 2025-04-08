@@ -32,22 +32,30 @@ fn main() {
     let src = driver::preprocess(&input_fn).expect("Error runnning preprocessor on file.");
     let src = fs::read_to_string(src).expect("Error reading preprocessed source code.");
 
+    // tokenization
     let tokens = parser::tokenize(&src);
 
     if cli.lex {
-        dbg!(tokens);
-
+        dbg!(&tokens);
         close(&input_fn);
     }
 
+    // parsing
     let ast = parser::parse(&mut parser::tokens(&src));
+    let ast = match ast {
+        Ok(ref ast) => ast,
+        Err(msg) => panic!("{}", msg),
+    };
 
     if cli.parse {
-        match ast {
-            Ok(ast) => dbg!(ast),
-            Err(msg) => panic!("{}", msg),
-        };
+        dbg!(ast);
+        close(&input_fn);
+    }
 
+    // codegen
+    let asm = codegen::lower_program(&ast);
+    if cli.codegen {
+        dbg!(asm);
         close(&input_fn);
     }
 
