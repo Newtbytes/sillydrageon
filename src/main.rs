@@ -53,7 +53,7 @@ fn main() {
     }
 
     // codegen
-    let asm = codegen::lower_program(&ast);
+    let asm = codegen::lower(&ast);
     if cli.codegen {
         dbg!(asm);
         close(&input_fn);
