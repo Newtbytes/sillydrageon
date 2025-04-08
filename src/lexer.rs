@@ -24,8 +24,8 @@ pub enum TokenKind {
 
 #[derive(Debug)]
 pub struct Token {
-    kind: TokenKind,
-    value: String,
+    pub kind: TokenKind,
+    pub value: String,
 }
 
 struct Scanner<'a> {
@@ -140,7 +140,17 @@ impl Iterator for Scanner<'_> {
 
 pub fn tokenize(src: &str) -> Vec<Token> {
     let src = src.chars().peekable();
-    let scanner: Scanner = Scanner{src, consumed: String::new() };
+    let scanner: Scanner = Scanner {
+        src,
+        consumed: String::new(),
+    };
 
     return scanner.collect();
+}
+
+pub fn tokens(src: &str) -> impl Iterator<Item = Token> {
+    Scanner {
+        src: src.chars().peekable(),
+        consumed: String::new(),
+    }
 }

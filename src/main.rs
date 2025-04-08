@@ -4,6 +4,7 @@ use clap::Parser;
 
 mod driver;
 mod lexer;
+mod parser;
 
 #[derive(Parser)]
 struct Cli {
@@ -19,6 +20,11 @@ struct Cli {
     codegen: bool,
 }
 
+fn close(input_fn: &str) {
+    let _ = driver::cleanup(input_fn.to_owned());
+    std::process::exit(0);
+}
+
 fn main() {
     let cli: Cli = Cli::parse();
     let input_fn = cli.input;
@@ -30,12 +36,24 @@ fn main() {
 
     if cli.lex {
         dbg!(tokens);
-        std::process::exit(0);
+
+        close(&input_fn);
+    }
+
+    let ast = parser::parse(&mut lexer::tokens(&src));
+
+    if cli.parse {
+        match ast {
+            Ok(ast) => dbg!(ast),
+            Err(msg) => panic!("{}", msg)
+        };
+
+        close(&input_fn);
     }
 
     // let asm_fn = driver::compile(src);
 
     // driver::assemble(asm_fn).expect("Error assembling compiled program.");
 
-    let _ = driver::cleanup(input_fn);
+    close(&input_fn);
 }
