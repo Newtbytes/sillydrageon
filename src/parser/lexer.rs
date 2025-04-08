@@ -1,32 +1,7 @@
 use std::iter::Peekable;
 use std::str;
 
-#[derive(Debug, PartialEq)]
-pub enum TokenKind {
-    Identifier, // a-z
-    Constant,   // 0-9
-
-    // Keywords
-    Int,
-    Void,
-    Return,
-
-    // ( )
-    LParen,
-    RParen,
-
-    // { }
-    LBrace,
-    RBrace,
-
-    Semicolon,
-}
-
-#[derive(Debug)]
-pub struct Token {
-    pub kind: TokenKind,
-    pub value: String,
-}
+use super::ast::{Token, TokenKind};
 
 struct Scanner<'a> {
     src: Peekable<str::Chars<'a>>,

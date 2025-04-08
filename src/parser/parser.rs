@@ -1,16 +1,4 @@
-use crate::lexer::{Token, TokenKind};
-
-#[derive(Debug)]
-pub enum Expr {
-    Constant(u32),
-}
-
-#[derive(Debug)]
-pub enum Stmt {
-    FnSignature(String, Box<Stmt>),
-    Program(Box<Stmt>),
-    Return(Expr),
-}
+use super::ast::{Expr, Stmt, Token, TokenKind};
 
 type ParseResult<T> = Result<T, String>;
 

@@ -3,10 +3,9 @@ use std::fs;
 use clap::Parser;
 
 mod driver;
-mod lexer;
 mod parser;
 
-#[derive(Parser)]
+#[derive(clap::Parser)]
 struct Cli {
     input: String,
 
@@ -32,7 +31,7 @@ fn main() {
     let src = driver::preprocess(&input_fn).expect("Error runnning preprocessor on file.");
     let src = fs::read_to_string(src).expect("Error reading preprocessed source code.");
 
-    let tokens = lexer::tokenize(&src);
+    let tokens = parser::tokenize(&src);
 
     if cli.lex {
         dbg!(tokens);
@@ -40,7 +39,7 @@ fn main() {
         close(&input_fn);
     }
 
-    let ast = parser::parse(&mut lexer::tokens(&src));
+    let ast = parser::parse(&mut parser::tokens(&src));
 
     if cli.parse {
         match ast {
