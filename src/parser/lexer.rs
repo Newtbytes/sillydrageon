@@ -8,7 +8,7 @@ struct Scanner<'a> {
     consumed: String,
 }
 
-impl<'a> Scanner<'a> {
+impl Scanner<'_> {
     fn eat(&mut self) -> Option<char> {
         let c = self.src.next();
 
@@ -16,7 +16,7 @@ impl<'a> Scanner<'a> {
             self.consumed.push(c);
         }
 
-        return c;
+        c
     }
 
     fn eat_if<P>(&mut self, mut predicate: P) -> Option<char>
@@ -29,20 +29,20 @@ impl<'a> Scanner<'a> {
             self.consumed.push(c);
         }
 
-        return ch;
+        ch
     }
 
     fn eat_while<P>(&mut self, mut predicate: P)
     where
         P: FnMut(&char) -> bool,
     {
-        while let Some(_) = self.eat_if(&mut predicate) {
+        while self.eat_if(&mut predicate).is_some() {
             continue;
         }
     }
 
     fn one_ahead(&mut self) -> Option<&char> {
-        return self.src.peek();
+        self.src.peek()
     }
 
     fn emit(&mut self, token: TokenKind) -> Token {
@@ -53,7 +53,7 @@ impl<'a> Scanner<'a> {
 
         self.consumed.clear();
 
-        return tok;
+        tok
     }
 }
 
@@ -109,7 +109,7 @@ impl Iterator for Scanner<'_> {
             }
         };
 
-        return Some(self.emit(kind));
+        Some(self.emit(kind))
     }
 }
 
@@ -120,7 +120,7 @@ pub fn tokenize(src: &str) -> Vec<Token> {
         consumed: String::new(),
     };
 
-    return scanner.collect();
+    scanner.collect()
 }
 
 pub fn tokens(src: &str) -> impl Iterator<Item = Token> {

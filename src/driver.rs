@@ -15,12 +15,12 @@ pub fn preprocess(src_fn: &str) -> io::Result<String> {
         .arg(&dst_fn)
         .output()?;
 
-    return Ok(dst_fn);
+    Ok(dst_fn)
 }
 
 pub fn compile(src_fn: String) -> String {
     // stub
-    return src_fn;
+    src_fn
 }
 
 pub fn assemble(src_fn: String) -> io::Result<String> {
@@ -32,7 +32,7 @@ pub fn assemble(src_fn: String) -> io::Result<String> {
         .arg(&dst_fn)
         .output()?;
 
-    return Ok(dst_fn);
+    Ok(dst_fn)
 }
 
 pub fn cleanup(src_fn: &str) -> io::Result<()> {
@@ -47,5 +47,5 @@ pub fn cleanup(src_fn: &str) -> io::Result<()> {
         fs::remove_file(&asm_fn)?;
     }
 
-    return Ok(());
+    Ok(())
 }
