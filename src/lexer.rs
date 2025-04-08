@@ -1,10 +1,10 @@
-use std::iter::{self, Peekable};
+use std::iter::Peekable;
 use std::str;
 
-#[derive(Debug)]
-pub enum Token {
-    Identifier(String), // a-z
-    Constant(u32),      // 0-9
+#[derive(Debug, PartialEq)]
+pub enum TokenKind {
+    Identifier, // a-z
+    Constant,   // 0-9
 
     // Keywords
     Int,
@@ -22,78 +22,125 @@ pub enum Token {
     Semicolon,
 }
 
-fn eat_while<'a, P>(
-    src: &'a mut Peekable<str::Chars>,
-    mut predicate: P,
-) -> Peekable<impl Iterator<Item = char> + 'a>
-where
-    P: FnMut(&char) -> bool + 'a,
-{
-    iter::from_fn(move || src.next_if(&mut predicate)).peekable()
+#[derive(Debug)]
+pub struct Token {
+    kind: TokenKind,
+    value: String,
 }
 
-pub fn next_token(src: &mut Peekable<str::Chars>) -> Option<Token> {
-    use Token::*;
+struct Scanner<'a> {
+    src: Peekable<str::Chars<'a>>,
+    consumed: String,
+}
 
-    let token = match src.next() {
-        Some(c) => match c {
-            '(' => LParen,
-            ')' => RParen,
+impl<'a> Scanner<'a> {
+    fn eat(&mut self) -> Option<char> {
+        let c = self.src.next();
 
-            '{' => LBrace,
-            '}' => RBrace,
+        if let Some(c) = c {
+            self.consumed.push(c);
+        }
 
-            ';' => Semicolon,
+        return c;
+    }
 
-            c if matches!(c, 'a'..='z' | 'A'..='Z' | '_') => {
-                let rest: String = eat_while(
-                    src,
-                    |&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'),
-                )
-                .collect();
-                let id = c.to_string() + &rest;
+    fn eat_if<P>(&mut self, mut predicate: P) -> Option<char>
+    where
+        P: FnMut(&char) -> bool,
+    {
+        let ch = self.src.next_if(&mut predicate);
 
-                // handle keywords
-                match id.as_str() {
-                    "void" => Void,
-                    "int" => Int,
-                    "return" => Return,
+        if let Some(c) = ch {
+            self.consumed.push(c);
+        }
 
-                    _ => Identifier(id),
-                }
-            }
+        return ch;
+    }
 
-            c if c.is_ascii_digit() => {
-                let v: String = eat_while(src, |&c| c.is_ascii_digit()).collect();
+    fn eat_while<P>(&mut self, mut predicate: P)
+    where
+        P: FnMut(&char) -> bool,
+    {
+        while let Some(_) = self.eat_if(&mut predicate) {
+            continue;
+        }
+    }
 
-                if let Some(c) = src.peek() {
-                    if c.is_alphanumeric() {
-                        panic!("Lexer error");
+    fn one_ahead(&mut self) -> Option<&char> {
+        return self.src.peek();
+    }
+
+    fn emit(&mut self, token: TokenKind) -> Token {
+        let tok = Token {
+            kind: token,
+            value: self.consumed.clone(),
+        };
+
+        self.consumed.clear();
+
+        return tok;
+    }
+}
+
+impl Iterator for Scanner<'_> {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Token> {
+        use TokenKind::*;
+
+        // skip whitespace
+        self.eat_while(|&c| c.is_whitespace());
+        self.consumed.clear();
+
+        let kind = match self.eat() {
+            Some(c) => match c {
+                '(' => LParen,
+                ')' => RParen,
+
+                '{' => LBrace,
+                '}' => RBrace,
+
+                ';' => Semicolon,
+
+                c if matches!(c, 'a'..='z' | 'A'..='Z' | '_') => {
+                    self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
+
+                    // handle keywords
+                    match self.consumed.as_str() {
+                        "void" => Void,
+                        "int" => Int,
+                        "return" => Return,
+
+                        _ => Identifier,
                     }
                 }
 
-                Constant((c.to_string() + &v).parse().unwrap())
+                c if c.is_ascii_digit() => {
+                    self.eat_while(|&c| c.is_ascii_digit());
+
+                    if let Some(c) = self.one_ahead() {
+                        if c.is_alphanumeric() {
+                            panic!("Lexer error");
+                        }
+                    }
+
+                    Constant
+                }
+
+                _ => panic!("lexer error"),
+            },
+            None => {
+                return None;
             }
+        };
 
-            c if c.is_whitespace() => next_token(src)?,
-
-            _ => panic!("lexer error"),
-        },
-        None => {
-            return None;
-        }
-    };
-
-    return Some(token);
+        return Some(self.emit(kind));
+    }
 }
 
-pub fn tokenize(src: String) -> Vec<Token> {
-    let mut src = src.chars().peekable();
-    let mut tokens = Vec::new();
+pub fn tokenize(src: &str) -> Vec<Token> {
+    let src = src.chars().peekable();
+    let scanner: Scanner = Scanner{src, consumed: String::new() };
 
-    while let Some(tok) = next_token(&mut src) {
-        tokens.push(tok);
-    }
-
-    return tokens;
+    return scanner.collect();
 }

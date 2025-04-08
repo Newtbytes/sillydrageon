@@ -26,9 +26,9 @@ fn main() {
     let src = driver::preprocess(&input_fn).expect("Error runnning preprocessor on file.");
     let src = fs::read_to_string(src).expect("Error reading preprocessed source code.");
 
-    let tokens = lexer::tokenize(src);
+    let tokens = lexer::tokenize(&src);
 
-    if cli.lex {    
+    if cli.lex {
         dbg!(tokens);
         std::process::exit(0);
     }
