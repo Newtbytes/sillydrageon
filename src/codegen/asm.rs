@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub struct Program {
-    pub body: Vec<Decl>,
+    pub body: Decl,
 }
 
 #[derive(Debug)]

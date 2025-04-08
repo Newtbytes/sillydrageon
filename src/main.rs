@@ -54,8 +54,9 @@ fn main() {
 
     // codegen
     let asm = codegen::lower(&ast);
+    let asm = codegen::emit(&asm);
     if cli.codegen {
-        dbg!(asm);
+        println!("{}", asm);
         close(&input_fn);
     }
 

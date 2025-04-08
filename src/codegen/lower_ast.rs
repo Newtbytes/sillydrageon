@@ -3,7 +3,6 @@ use super::parser;
 use super::asm;
 use asm::*;
 
-
 fn lower_expr(expr: &parser::Expr) -> asm::Operand {
     match expr {
         parser::Expr::Constant(value) => Operand::Imm(*value),
@@ -33,6 +32,6 @@ fn lower_decl(stmt: &parser::Decl) -> asm::Decl {
 
 pub fn lower_program(prg: &parser::Program) -> asm::Program {
     asm::Program {
-        body: vec![lower_decl(&prg.body)],
+        body: lower_decl(&prg.body),
     }
 }
