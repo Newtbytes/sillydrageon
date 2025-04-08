@@ -21,7 +21,7 @@ struct Cli {
 }
 
 fn close(input_fn: &str) {
-    let _ = driver::cleanup(input_fn.to_owned());
+    let _ = driver::cleanup(input_fn);
     std::process::exit(0);
 }
 

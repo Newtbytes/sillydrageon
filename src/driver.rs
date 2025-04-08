@@ -35,7 +35,7 @@ pub fn assemble(src_fn: String) -> io::Result<String> {
     return Ok(dst_fn);
 }
 
-pub fn cleanup(src_fn: String) -> io::Result<()> {
+pub fn cleanup(src_fn: &str) -> io::Result<()> {
     let pp_fn = src_fn.replace(".c", ".i");
     let asm_fn = src_fn.replace(".c", ".S");
 
