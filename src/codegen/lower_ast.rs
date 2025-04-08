@@ -25,7 +25,7 @@ fn lower_decl(stmt: &parser::Decl) -> asm::Decl {
     match stmt {
         parser::Decl::Function(name, stmt) => Decl::Function {
             name: name.to_string(),
-            body: lower_stmt(&*stmt),
+            body: lower_stmt(stmt),
         },
     }
 }

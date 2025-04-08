@@ -53,7 +53,7 @@ fn main() {
     }
 
     // codegen
-    let asm = codegen::lower(&ast);
+    let asm = codegen::lower(ast);
     let asm = codegen::emit(&asm);
     if cli.codegen {
         println!("{}", asm);
