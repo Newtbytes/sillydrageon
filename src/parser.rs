@@ -8,7 +8,7 @@ pub enum Expr {
 
 #[derive(Debug)]
 pub enum Stmt {
-    FnDefinition(String, Box<Stmt>),
+    FnSignature(String, Box<Stmt>),
     Program(Box<Stmt>),
     Return(Expr),
 }
@@ -39,7 +39,7 @@ fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
     return Ok(Expr::Constant(value.value.parse().unwrap()));
 }
 
-fn parse_fn_definition<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
+fn parse_fn_signature<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
     expect(TokenKind::Int, tokens)?;
     let name = expect(TokenKind::Identifier, tokens)?;
 
@@ -51,13 +51,13 @@ fn parse_fn_definition<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult
     let body = parse_statement(tokens)?;
     expect(TokenKind::RBrace, tokens)?;
 
-    return Ok(Stmt::FnDefinition(name.value, Box::new(body)));
+    return Ok(Stmt::FnSignature(name.value, Box::new(body)));
 }
 
 fn parse_program<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
-    let def = parse_fn_definition(tokens)?;
+    let sig = parse_fn_signature(tokens)?;
 
-    return Ok(Stmt::Program(Box::new(def)));
+    return Ok(Stmt::Program(Box::new(sig)));
 }
 
 pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
