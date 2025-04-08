@@ -2,6 +2,7 @@ use std::fs;
 
 use clap::Parser;
 
+mod codegen;
 mod driver;
 mod parser;
 

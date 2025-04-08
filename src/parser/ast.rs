@@ -27,14 +27,23 @@ pub struct Token {
 }
 
 // ast nodes
+
 #[derive(Debug)]
-pub enum Expr {
-    Constant(u32),
+pub struct Program {
+    pub body: Decl,
+}
+
+#[derive(Debug)]
+pub enum Decl {
+    Function(String, Box<Stmt>),
 }
 
 #[derive(Debug)]
 pub enum Stmt {
-    FnSignature(String, Box<Stmt>),
-    Program(Box<Stmt>),
     Return(Expr),
+}
+
+#[derive(Debug)]
+pub enum Expr {
+    Constant(u32),
 }

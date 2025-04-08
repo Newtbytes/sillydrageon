@@ -4,14 +4,11 @@ mod lexer;
 pub use ast::*;
 pub use lexer::*;
 
-
 type ParseResult<T> = Result<T, String>;
 
 fn expect<T: Iterator<Item = Token>>(expected: TokenKind, tokens: &mut T) -> ParseResult<Token> {
     match tokens.next() {
-        Some(token) if token.kind == expected => {
-            Ok(token)
-        }
+        Some(token) if token.kind == expected => Ok(token),
         None => Err("Unexpectedly reached end of input".to_owned()),
         Some(unexpected) => Err(format!("Unexpectedly got '{}'", unexpected.value)),
     }
@@ -30,7 +27,7 @@ fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
     Ok(Expr::Constant(value.value.parse().unwrap()))
 }
 
-fn parse_fn_signature<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
+fn parse_function<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Decl> {
     expect(TokenKind::Int, tokens)?;
     let name = expect(TokenKind::Identifier, tokens)?;
 
@@ -42,16 +39,16 @@ fn parse_fn_signature<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<
     let body = parse_statement(tokens)?;
     expect(TokenKind::RBrace, tokens)?;
 
-    Ok(Stmt::FnSignature(name.value, Box::new(body)))
+    Ok(Decl::Function(name.value, Box::new(body)))
 }
 
-fn parse_program<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
-    let sig = parse_fn_signature(tokens)?;
+fn parse_program<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
+    let func = parse_function(tokens)?;
 
-    Ok(Stmt::Program(Box::new(sig)))
+    Ok(Program { body: func })
 }
 
-pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
+pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
     let prg = parse_program(tokens)?;
 
     if let Some(tok) = tokens.next() {
