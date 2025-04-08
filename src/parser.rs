@@ -54,8 +54,18 @@ fn parse_fn_definition<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult
     return Ok(Stmt::FnDefinition(name.value, Box::new(body)));
 }
 
-pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
+fn parse_program<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
     let def = parse_fn_definition(tokens)?;
 
     return Ok(Stmt::Program(Box::new(def)));
+}
+
+pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
+    let prg = parse_program(tokens)?;
+
+    if let Some(tok) = tokens.next() {
+        return Err(format!("Expected end of program, but got {:?} '{}'", tok.kind, tok.value));
+    }
+
+    return Ok(prg);
 }
