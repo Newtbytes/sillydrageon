@@ -41,11 +41,8 @@ fn main() -> Result<(), CompilerError> {
     }
 
     // parsing
-    let ast = parser::parse(&mut parser::tokens(&src));
-    let ast = match ast {
-        Ok(ref ast) => ast,
-        Err(msg) => panic!("{}", msg),
-    };
+    let ast = parser::parse(&mut parser::tokens(&src))
+        .map_err(|msg| CompilerError::ParseError(msg))?;
 
     if cli.parse {
         dbg!(ast);
@@ -53,7 +50,7 @@ fn main() -> Result<(), CompilerError> {
     }
 
     // codegen
-    let asm = codegen::lower(ast);
+    let asm = codegen::lower(&ast);
     let asm = codegen::emit(&asm);
     if cli.codegen {
         println!("{}", asm);
