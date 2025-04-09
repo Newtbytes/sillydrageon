@@ -58,14 +58,19 @@ pub struct ProcFile<'a> {
 }
 
 impl<'a> ProcFile<'a> {
+    pub fn from_path(path: &'a Path) -> Option<Self> {
+        let parent = path.parent().unwrap_or_else(|| Path::new(""));
+        let name = path.file_stem()?.to_str()?.to_owned();
+        let kind = path.extension()
+            .and_then(|ext| ext.to_str())
+            .map(ProcFileKind::from)
+            .unwrap_or(ProcFileKind::Binary);
+        
+        Some(Self { name, path: parent, kind })
+    }
+
     pub fn from_fn(filename: &'a str) -> Option<Self> {
-        let filename = Path::new(filename);
-
-        let path = filename.parent()?;
-        let name = filename.file_stem()?.to_str()?.to_owned();
-        let kind = ProcFileKind::from(filename.extension()?.to_str()?);
-
-        Some(Self { name, path, kind })
+        Self::from_path(Path::new(filename))
     }
 
     fn get_fn(&self) -> PathBuf {
