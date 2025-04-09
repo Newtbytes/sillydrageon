@@ -1,6 +1,5 @@
-use std::fs;
-
 use clap::Parser;
+use driver::ProcFileKind;
 
 mod codegen;
 mod driver;
@@ -20,24 +19,24 @@ struct Cli {
     codegen: bool,
 }
 
-fn close(input_fn: &str) {
-    let _ = driver::cleanup(input_fn);
-    std::process::exit(0);
-}
-
 fn main() {
     let cli: Cli = Cli::parse();
     let input_fn = cli.input;
 
-    let src = driver::preprocess(&input_fn).expect("Error runnning preprocessor on file.");
-    let src = fs::read_to_string(src).expect("Error reading preprocessed source code.");
+
+    let file = driver::ProcFile::from_fn(&input_fn)
+        .expect("Error opening source file");
+
+    let src_file = driver::preprocess(file).expect("Error runnning preprocessor on file.");
+    let asm_file = src_file.to_kind(ProcFileKind::Assembly);
+    let src = src_file.read();
 
     // tokenization
     let tokens = parser::tokenize(&src);
 
     if cli.lex {
         dbg!(&tokens);
-        close(&input_fn);
+        std::process::exit(0);
     }
 
     // parsing
@@ -49,7 +48,7 @@ fn main() {
 
     if cli.parse {
         dbg!(ast);
-        close(&input_fn);
+        std::process::exit(0);
     }
 
     // codegen
@@ -57,11 +56,12 @@ fn main() {
     let asm = codegen::emit(&asm);
     if cli.codegen {
         println!("{}", asm);
-        close(&input_fn);
+        std::process::exit(0);
     }
 
+    asm_file.write(asm)
+        .expect("Error writing assembly to file");
 
-    driver::assemble(&asm, &input_fn).expect("Error assembling compiled program.");
-
-    close(&input_fn);
+    driver::assemble(asm_file)
+        .expect("Error during assembly");
 }
