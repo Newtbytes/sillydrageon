@@ -60,9 +60,8 @@ fn main() {
         close(&input_fn);
     }
 
-    // let asm_fn = driver::compile(src);
 
-    // driver::assemble(asm_fn).expect("Error assembling compiled program.");
+    driver::assemble(&asm, &input_fn).expect("Error assembling compiled program.");
 
     close(&input_fn);
 }

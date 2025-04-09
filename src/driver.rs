@@ -18,19 +18,18 @@ pub fn preprocess(src_fn: &str) -> io::Result<String> {
     Ok(dst_fn)
 }
 
-pub fn compile(src_fn: String) -> String {
-    // stub
-    src_fn
-}
-
-pub fn assemble(src_fn: String) -> io::Result<String> {
-    let dst_fn = src_fn.replace(".i", "");
+pub fn assemble(asm: &str, src_fn: &str) -> io::Result<String> {
+    let src_fn = src_fn.replace(".c", ".S");
+    let dst_fn = src_fn.replace(".S", "");
+    fs::write(&src_fn, asm)?;
 
     Command::new(CC)
-        .arg(src_fn)
+        .arg(&src_fn)
         .arg("-o")
         .arg(&dst_fn)
         .output()?;
+
+    fs::remove_file(&src_fn)?;
 
     Ok(dst_fn)
 }
