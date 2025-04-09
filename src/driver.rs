@@ -97,9 +97,7 @@ impl<'a> ProcFile<'a> {
 impl Drop for ProcFile<'_> {
     fn drop(&mut self) {
         if self.kind != ProcFileKind::Source && self.kind != ProcFileKind::Binary {
-            if let Err(e) = fs::remove_file(self.get_fn()) {
-                eprintln!("Warning: Failed to remove temporary file: {}", e);
-            }
+            fs::remove_file(self.get_fn()).ok();
         }
     }
 }
