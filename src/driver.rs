@@ -65,17 +65,17 @@ impl<'a> ProcFile<'a> {
         let name = filename.file_stem()?.to_str()?.to_owned();
         let kind = ProcFileKind::from(filename.extension()?.to_str()?);
 
-        return Some(Self { name, path, kind });
+        Some(Self { name, path, kind })
     }
 
     fn get_fn(&self) -> PathBuf {
-        return self.path.join(self.name.clone() + self.kind.get_ext());
+        self.path.join(self.name.clone() + self.kind.get_ext())
     }
 
     pub fn to_kind(&self, kind: ProcFileKind) -> Self {
         let mut cpy = self.clone();
         cpy.kind = kind;
-        return cpy;
+        cpy
     }
 
     pub fn write(&self, src: String) -> io::Result<()> {

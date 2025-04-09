@@ -63,5 +63,5 @@ fn main() -> Result<(), CompilerError> {
     asm_file.write(asm)?;
     driver::assemble(asm_file)?;
 
-    return Ok(());
+    Ok(())
 }
