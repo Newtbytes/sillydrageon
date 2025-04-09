@@ -1,8 +1,10 @@
 use clap::Parser;
 use driver::ProcFileKind;
+use error::CompilerError;
 
 mod codegen;
 mod driver;
+mod error;
 mod parser;
 
 #[derive(clap::Parser)]
@@ -19,24 +21,23 @@ struct Cli {
     codegen: bool,
 }
 
-fn main() {
+fn main() -> Result<(), CompilerError> {
     let cli: Cli = Cli::parse();
     let input_fn = cli.input;
 
-
     let file = driver::ProcFile::from_fn(&input_fn)
-        .expect("Error opening source file");
+        .ok_or_else(|| CompilerError::ParseError("Invalid source file".to_string()))?;
 
-    let src_file = driver::preprocess(file).expect("Error runnning preprocessor on file.");
+    let src_file = driver::preprocess(file)?;
     let asm_file = src_file.to_kind(ProcFileKind::Assembly);
-    let src = src_file.read();
+    let src = src_file.read()?;
 
     // tokenization
     let tokens = parser::tokenize(&src);
 
     if cli.lex {
         dbg!(&tokens);
-        std::process::exit(0);
+        return Ok(());
     }
 
     // parsing
@@ -48,7 +49,7 @@ fn main() {
 
     if cli.parse {
         dbg!(ast);
-        std::process::exit(0);
+        return Ok(());
     }
 
     // codegen
@@ -56,12 +57,11 @@ fn main() {
     let asm = codegen::emit(&asm);
     if cli.codegen {
         println!("{}", asm);
-        std::process::exit(0);
+        return Ok(());
     }
 
-    asm_file.write(asm)
-        .expect("Error writing assembly to file");
+    asm_file.write(asm)?;
+    driver::assemble(asm_file)?;
 
-    driver::assemble(asm_file)
-        .expect("Error during assembly");
+    return Ok(());
 }

@@ -84,9 +84,8 @@ impl<'a> ProcFile<'a> {
     }
 
     // Consumes self
-    pub fn read(self) -> String {
+    pub fn read(self) -> io::Result<String> {
         fs::read_to_string(self.get_fn())
-            .expect(&format!("Error reading file: {:?}", self.get_fn()))
     }
 }
 
