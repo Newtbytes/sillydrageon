@@ -53,6 +53,11 @@ impl Scanner<'_> {
         self.src.peek()
     }
 
+    fn empty_consumed(&mut self) {
+        self.offset += self.consumed.len();
+        self.consumed.clear();
+    }
+
     fn emit(&mut self, token: TokenKind) -> Token {
         let tok = Token {
             kind: token,
@@ -60,9 +65,7 @@ impl Scanner<'_> {
             offset: self.offset,
         };
 
-        self.offset += self.consumed.len();
-
-        self.consumed.clear();
+        self.empty_consumed();
 
         tok
     }
@@ -76,7 +79,7 @@ impl Iterator for Scanner<'_> {
 
         // skip whitespace
         self.eat_while(|&c| c.is_whitespace());
-        self.consumed.clear();
+        self.empty_consumed();
 
         let kind = match self.eat() {
             Some(c) => match c {
