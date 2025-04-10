@@ -1,6 +1,6 @@
 use clap::Parser;
 use driver::ProcFileKind;
-use error::CompilerError;
+use error::ErrorKind;
 
 mod codegen;
 mod driver;
@@ -21,12 +21,12 @@ struct Cli {
     codegen: bool,
 }
 
-fn main() -> Result<(), CompilerError> {
+fn main() -> Result<(), ErrorKind> {
     let cli: Cli = Cli::parse();
     let input_fn = cli.input;
 
     let file = driver::ProcFile::from_fn(&input_fn)
-        .ok_or_else(|| CompilerError::ParseError("Invalid source file".to_string()))?;
+        .ok_or_else(|| ErrorKind::ParseError("Invalid source file".to_string()))?;
 
     let src_file = driver::preprocess(file)?;
     let asm_file = src_file.to_kind(ProcFileKind::Assembly);
@@ -42,7 +42,7 @@ fn main() -> Result<(), CompilerError> {
 
     // parsing
     let ast =
-        parser::parse(&mut parser::tokens(&src)).map_err(|msg| CompilerError::ParseError(msg))?;
+        parser::parse(&mut parser::tokens(&src)).map_err(|msg| ErrorKind::ParseError(msg))?;
 
     if cli.parse {
         dbg!(ast);
