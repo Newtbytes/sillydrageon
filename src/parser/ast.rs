@@ -18,6 +18,8 @@ pub enum TokenKind {
     RBrace,
 
     Semicolon,
+
+    Error,
 }
 
 #[derive(Debug)]
