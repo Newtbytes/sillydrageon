@@ -19,26 +19,22 @@ impl<'a> From<&'a str> for Scanner<'a> {
 
 impl Scanner<'_> {
     fn eat(&mut self) -> Option<char> {
-        let c = self.src.next();
+        let c = self.src.next()?;
 
-        if let Some(c) = c {
-            self.consumed.push(c);
-        }
+        self.consumed.push(c);
 
-        c
+        Some(c)
     }
 
     fn eat_if<P>(&mut self, mut predicate: P) -> Option<char>
     where
         P: FnMut(&char) -> bool,
     {
-        let ch = self.src.next_if(&mut predicate);
+        let c = self.src.next_if(&mut predicate)?;
 
-        if let Some(c) = ch {
-            self.consumed.push(c);
-        }
+        self.consumed.push(c);
 
-        ch
+        Some(c)
     }
 
     fn eat_while<P>(&mut self, mut predicate: P)
