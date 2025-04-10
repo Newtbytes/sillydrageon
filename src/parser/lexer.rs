@@ -103,13 +103,10 @@ impl Iterator for Scanner<'_> {
                 c if c.is_ascii_digit() => {
                     self.eat_while(|&c| c.is_ascii_digit());
 
-                    if let Some(c) = self.one_ahead() {
-                        if c.is_alphanumeric() {
-                            panic!("Lexer error");
-                        }
+                    match self.one_ahead() {
+                        Some(c) if c.is_alphanumeric() => Error,
+                        Some(_) | None => Constant,
                     }
-
-                    Constant
                 }
 
                 _ => panic!("lexer error"),
