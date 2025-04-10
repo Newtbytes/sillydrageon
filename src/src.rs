@@ -9,7 +9,7 @@ pub struct Source {
 
 impl Source {
     pub fn get_span(&self, tok: &Token) -> Option<Span> {
-        if let Some(pos) = get_pos(&self, tok.offset) {
+        if let Some(pos) = self.pos_of(tok.offset) {
             Some(Span {
                 pos,
                 len: tok.value.len(),
@@ -52,16 +52,16 @@ impl<'src> Into<&'src Source> for Span<'src> {
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let line = self.pos.line;
-        let line = self.pos.src.text.lines().nth(line + 1).unwrap_or("<n/a>");
+        let line = self.pos.src.text.lines().nth(line).unwrap_or("<n/a>");
 
-        let pointer = " ".repeat(self.pos.col - 1) + &"^".repeat(self.len);
+        let pointer = " ".repeat(self.pos.col) + &"^".repeat(self.len);
 
         write!(f, "{}", line.to_owned() + "\n" + &pointer)
     }
 }
 
 fn get_pos(src: &Source, offset: usize) -> Option<Position> {
-    if offset < src.text.len() {
+    if offset >= src.text.len() {
         return None;
     }
 
