@@ -2,6 +2,7 @@ use std::iter::Peekable;
 use std::str;
 
 use super::ast::{Token, TokenKind};
+use crate::error::CompilerError;
 
 struct Scanner<'a> {
     src: Peekable<str::Chars<'a>>,
@@ -120,10 +121,11 @@ impl Iterator for Scanner<'_> {
     }
 }
 
-pub fn tokenize(src: &str) -> Vec<Token> {
-    Scanner::from(src).collect()
-}
-
-pub fn tokens(src: &str) -> impl Iterator<Item = Token> {
+pub fn tokenize(src: &str) -> Result<Vec<Token>, CompilerError> {
     Scanner::from(src)
+        .map(|tok| match tok.kind {
+            TokenKind::Error => Err(CompilerError::LexerError(tok)),
+            _ => Ok(tok),
+        })
+        .collect()
 }

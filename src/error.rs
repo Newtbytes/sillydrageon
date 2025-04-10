@@ -2,28 +2,27 @@ use std::fmt;
 
 use crate::parser::Token;
 
-
 #[derive(Debug)]
-pub enum ErrorKind {
+pub enum CompilerError {
     IoError(std::io::Error),
     ParseError(String),
-    LexerError(Token)
+    LexerError(Token),
 }
 
-impl From<std::io::Error> for ErrorKind {
+impl From<std::io::Error> for CompilerError {
     fn from(error: std::io::Error) -> Self {
-        ErrorKind::IoError(error)
+        CompilerError::IoError(error)
     }
 }
 
-impl fmt::Display for ErrorKind {
+impl fmt::Display for CompilerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ErrorKind::IoError(e) => write!(f, "I/O error: {}", e),
-            ErrorKind::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            ErrorKind::LexerError(tok) => write!(f, "Lexer error: Unexpected token: {:?}", tok),
+            CompilerError::IoError(e) => write!(f, "I/O error: {}", e),
+            CompilerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            CompilerError::LexerError(tok) => write!(f, "Lexer error: Unexpected token: {:?}", tok),
         }
     }
 }
 
-impl std::error::Error for ErrorKind {}
+impl std::error::Error for CompilerError {}
