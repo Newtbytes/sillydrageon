@@ -69,6 +69,16 @@ impl Iterator for Scanner<'_> {
 
         let kind = match self.eat() {
             Some(c) => match c {
+                '-' => match self.one_ahead() {
+                    Some('-') => Decrement,
+                    Some(_) => Negate,
+                    None => {
+                        return None;
+                    }
+                },
+
+                '~' => Complement,
+
                 '(' => LParen,
                 ')' => RParen,
 

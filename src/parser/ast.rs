@@ -9,6 +9,11 @@ pub enum TokenKind {
     Void,
     Return,
 
+    // Operations
+    Complement,
+    Negate,
+    Decrement,
+
     // ( )
     LParen,
     RParen,

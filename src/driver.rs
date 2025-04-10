@@ -61,12 +61,17 @@ impl<'a> ProcFile<'a> {
     pub fn from_path(path: &'a Path) -> Option<Self> {
         let parent = path.parent().unwrap_or_else(|| Path::new(""));
         let name = path.file_stem()?.to_str()?.to_owned();
-        let kind = path.extension()
+        let kind = path
+            .extension()
             .and_then(|ext| ext.to_str())
             .map(ProcFileKind::from)
             .unwrap_or(ProcFileKind::Binary);
-        
-        Some(Self { name, path: parent, kind })
+
+        Some(Self {
+            name,
+            path: parent,
+            kind,
+        })
     }
 
     pub fn from_fn(filename: &'a str) -> Option<Self> {

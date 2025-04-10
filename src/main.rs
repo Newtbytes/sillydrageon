@@ -41,8 +41,8 @@ fn main() -> Result<(), CompilerError> {
     }
 
     // parsing
-    let ast = parser::parse(&mut parser::tokens(&src))
-        .map_err(|msg| CompilerError::ParseError(msg))?;
+    let ast =
+        parser::parse(&mut parser::tokens(&src)).map_err(|msg| CompilerError::ParseError(msg))?;
 
     if cli.parse {
         dbg!(ast);
