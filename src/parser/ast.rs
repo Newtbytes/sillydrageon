@@ -24,6 +24,7 @@ pub enum TokenKind {
 pub struct Token {
     pub kind: TokenKind,
     pub value: String,
+    pub offset: usize,
 }
 
 // ast nodes

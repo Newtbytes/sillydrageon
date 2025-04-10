@@ -6,6 +6,7 @@ use super::ast::{Token, TokenKind};
 struct Scanner<'a> {
     src: Peekable<str::Chars<'a>>,
     consumed: String,
+    offset: usize,
 }
 
 impl<'a> From<&'a str> for Scanner<'a> {
@@ -13,6 +14,7 @@ impl<'a> From<&'a str> for Scanner<'a> {
         Scanner {
             src: value.chars().peekable(),
             consumed: String::new(),
+            offset: 0,
         }
     }
 }
@@ -54,7 +56,10 @@ impl Scanner<'_> {
         let tok = Token {
             kind: token,
             value: self.consumed.clone(),
+            offset: self.offset,
         };
+
+        self.offset += self.consumed.len();
 
         self.consumed.clear();
 
