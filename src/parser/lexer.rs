@@ -8,6 +8,15 @@ struct Scanner<'a> {
     consumed: String,
 }
 
+impl<'a> From<&'a str> for Scanner<'a> {
+    fn from(value: &'a str) -> Self {
+        Scanner {
+            src: value.chars().peekable(),
+            consumed: String::new(),
+        }
+    }
+}
+
 impl Scanner<'_> {
     fn eat(&mut self) -> Option<char> {
         let c = self.src.next();
@@ -114,18 +123,9 @@ impl Iterator for Scanner<'_> {
 }
 
 pub fn tokenize(src: &str) -> Vec<Token> {
-    let src = src.chars().peekable();
-    let scanner: Scanner = Scanner {
-        src,
-        consumed: String::new(),
-    };
-
-    scanner.collect()
+    Scanner::from(src).collect()
 }
 
 pub fn tokens(src: &str) -> impl Iterator<Item = Token> {
-    Scanner {
-        src: src.chars().peekable(),
-        consumed: String::new(),
-    }
+    Scanner::from(src)
 }
