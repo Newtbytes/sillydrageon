@@ -22,7 +22,11 @@ impl fmt::Display for CompilerError {
             CompilerError::IoError(e) => write!(f, "I/O error: {}", e),
             CompilerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
             CompilerError::LexerError(src, tok) => {
-                write!(f, "Lexer error: Unexpected token:\n{}", src.get_span(tok).unwrap())
+                write!(
+                    f,
+                    "Lexer error: Unexpected token:\n{}",
+                    src.get_span(tok).unwrap()
+                )
             }
         }
     }
