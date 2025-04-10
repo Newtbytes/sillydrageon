@@ -110,7 +110,7 @@ impl Iterator for Scanner<'_> {
                     }
                 }
 
-                _ => panic!("lexer error"),
+                _ => Error,
             },
             None => {
                 return None;
