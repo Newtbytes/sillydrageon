@@ -6,6 +6,7 @@ mod codegen;
 mod driver;
 mod error;
 mod parser;
+mod src;
 
 #[derive(clap::Parser)]
 struct Cli {

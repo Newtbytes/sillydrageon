@@ -1,12 +1,13 @@
 use std::fmt;
 
 use crate::parser::Token;
+use crate::src::Source;
 
 #[derive(Debug)]
 pub enum CompilerError {
     IoError(std::io::Error),
     ParseError(String),
-    LexerError(Token),
+    LexerError(Source, Token),
 }
 
 impl From<std::io::Error> for CompilerError {
@@ -20,7 +21,9 @@ impl fmt::Display for CompilerError {
         match self {
             CompilerError::IoError(e) => write!(f, "I/O error: {}", e),
             CompilerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            CompilerError::LexerError(tok) => write!(f, "Lexer error: Unexpected token: {:?}", tok),
+            CompilerError::LexerError(src, tok) => {
+                write!(f, "Lexer error: Unexpected token:\n{}", src.get_span(tok).unwrap())
+            }
         }
     }
 }
