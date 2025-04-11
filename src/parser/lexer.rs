@@ -71,12 +71,16 @@ impl Scanner<'_> {
     }
 
     fn eat_identifer(&mut self) {
-        self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
+        self.eat_while(is_identifier);
     }
 
     fn eat_int_literal(&mut self) {
-        self.eat_while(|&c| c.is_ascii_digit());
+        self.eat_while(char::is_ascii_digit);
     }
+}
+
+fn is_identifier(c: &char) -> bool {
+    matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_')
 }
 
 impl Iterator for Scanner<'_> {
