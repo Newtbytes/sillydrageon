@@ -5,8 +5,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use clap::Parser;
-
 use crate::codegen;
 use crate::error::CompilerError;
 use crate::parser;
@@ -142,7 +140,7 @@ pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
 }
 
 #[derive(clap::Parser)]
-struct Cli {
+pub struct Cli {
     input: String,
 
     #[arg(long, action = clap::ArgAction::SetTrue)]
@@ -155,8 +153,7 @@ struct Cli {
     codegen: bool,
 }
 
-pub fn run_compiler() -> Result<(), CompilerError> {
-    let cli: Cli = Cli::parse();
+pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     let input_fn = cli.input;
 
     let file = ProcFile::from_fn(&input_fn)
