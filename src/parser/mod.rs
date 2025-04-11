@@ -1,5 +1,6 @@
 mod ast;
 mod lexer;
+mod sync;
 
 pub use ast::*;
 pub use lexer::*;
