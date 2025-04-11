@@ -118,13 +118,13 @@ impl Iterator for Scanner<'_> {
                     match self.one_ahead() {
                         Some(c) if c.is_alphanumeric() => {
                             self.eat_identifer();
-                            Error
+                            Error("Identifiers cannot start with a digit")
                         },
                         Some(_) | None => Constant,
                     }
                 }
 
-                _ => Error,
+                _ => Error(""),
             },
             None => {
                 return None;
@@ -138,7 +138,7 @@ impl Iterator for Scanner<'_> {
 pub fn tokenize(src: &str) -> Result<Vec<Token>, CompilerError> {
     Scanner::from(src)
         .map(|tok| match tok.kind {
-            TokenKind::Error => Err(CompilerError::LexerError(src.into(), tok)),
+            TokenKind::Error(_) => Err(CompilerError::LexerError(src.into(), tok)),
             _ => Ok(tok),
         })
         .collect()

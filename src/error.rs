@@ -1,7 +1,7 @@
 use std::fmt::{self};
 use std::process::Termination;
 
-use crate::parser::Token;
+use crate::parser::{Token, TokenKind};
 use crate::src::Source;
 
 pub enum CompilerError {
@@ -24,8 +24,12 @@ impl fmt::Display for CompilerError {
             CompilerError::LexerError(src, tok) => {
                 write!(
                     f,
-                    "Lexer error: Unexpected token\n{}",
-                    src.get_span(tok).unwrap()
+                    "Lexer error: Unexpected token\n{} {}",
+                    src.get_span(tok).unwrap(),
+                    match tok.kind {
+                        TokenKind::Error(msg) => msg,
+                        _ => ""
+                    }
                 )
             }
         }

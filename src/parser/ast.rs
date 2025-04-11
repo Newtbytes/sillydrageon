@@ -19,7 +19,7 @@ pub enum TokenKind {
 
     Semicolon,
 
-    Error,
+    Error(&'static str),
 }
 
 #[derive(Debug)]
