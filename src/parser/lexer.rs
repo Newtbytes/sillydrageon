@@ -69,6 +69,14 @@ impl Scanner<'_> {
 
         tok
     }
+
+    fn eat_identifer(&mut self) {
+        self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
+    }
+
+    fn eat_int_literal(&mut self) {
+        self.eat_while(|&c| c.is_ascii_digit());
+    }
 }
 
 impl Iterator for Scanner<'_> {
@@ -92,7 +100,7 @@ impl Iterator for Scanner<'_> {
                 ';' => Semicolon,
 
                 'a'..='z' | 'A'..='Z' | '_' => {
-                    self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
+                    self.eat_identifer();
 
                     // handle keywords
                     match self.consumed.as_str() {
@@ -102,13 +110,16 @@ impl Iterator for Scanner<'_> {
 
                         _ => Identifier,
                     }
-                }
+                },
 
                 c if c.is_ascii_digit() => {
-                    self.eat_while(|&c| c.is_ascii_digit());
+                    self.eat_int_literal();
 
                     match self.one_ahead() {
-                        Some(c) if c.is_alphanumeric() => Error,
+                        Some(c) if c.is_alphanumeric() => {
+                            self.eat_identifer();
+                            Error
+                        },
                         Some(_) | None => Constant,
                     }
                 }
