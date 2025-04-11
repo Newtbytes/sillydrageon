@@ -160,7 +160,7 @@ pub fn run_compiler() -> Result<(), CompilerError> {
     let input_fn = cli.input;
 
     let file = ProcFile::from_fn(&input_fn)
-        .ok_or_else(|| CompilerError::ParseError("Invalid source file".to_string()))?;
+        .ok_or_else(|| CompilerError::Parser("Invalid source file".to_string()))?;
 
     let src_file = preprocess(file)?;
     let asm_file = src_file.to_kind(ProcFileKind::Assembly);
@@ -175,8 +175,7 @@ pub fn run_compiler() -> Result<(), CompilerError> {
     }
 
     // parsing
-    let ast =
-        parser::parse(&mut tokens.into_iter()).map_err(|msg| CompilerError::ParseError(msg))?;
+    let ast = parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)?;
 
     if cli.parse {
         dbg!(ast);

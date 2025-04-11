@@ -142,7 +142,7 @@ impl Iterator for Scanner<'_> {
 pub fn tokenize(src: &str) -> Result<Vec<Token>, CompilerError> {
     Scanner::from(src)
         .map(|tok| match tok.kind {
-            TokenKind::Error(_) => Err(CompilerError::LexerError(src.into(), tok)),
+            TokenKind::Error(_) => Err(CompilerError::Lexer(src.into(), tok)),
             _ => Ok(tok),
         })
         .collect()

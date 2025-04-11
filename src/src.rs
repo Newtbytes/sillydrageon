@@ -9,14 +9,10 @@ pub struct Source {
 
 impl Source {
     pub fn get_span(&self, tok: &Token) -> Option<Span> {
-        if let Some(pos) = self.pos_of(tok.offset) {
-            Some(Span {
-                pos,
-                len: tok.value.len(),
-            })
-        } else {
-            None
-        }
+        self.pos_of(tok.offset).map(|pos| Span {
+            pos,
+            len: tok.value.len(),
+        })
     }
 
     fn pos_of(&self, offset: usize) -> Option<Position> {
@@ -43,9 +39,9 @@ pub struct Span<'src> {
     len: usize,
 }
 
-impl<'src> Into<&'src Source> for Span<'src> {
-    fn into(self) -> &'src Source {
-        self.pos.src
+impl<'src> From<Span<'src>> for &'src Source {
+    fn from(val: Span<'src>) -> Self {
+        val.pos.src
     }
 }
 
@@ -80,5 +76,5 @@ fn get_pos(src: &Source, offset: usize) -> Option<Position> {
         }
     }
 
-    return None;
+    None
 }

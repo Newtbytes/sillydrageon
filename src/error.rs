@@ -5,23 +5,23 @@ use crate::parser::{Token, TokenKind};
 use crate::src::Source;
 
 pub enum CompilerError {
-    IoError(std::io::Error),
-    ParseError(String),
-    LexerError(Source, Token),
+    IO(std::io::Error),
+    Parser(String),
+    Lexer(Source, Token),
 }
 
 impl From<std::io::Error> for CompilerError {
     fn from(error: std::io::Error) -> Self {
-        CompilerError::IoError(error)
+        CompilerError::IO(error)
     }
 }
 
 impl fmt::Display for CompilerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CompilerError::IoError(e) => write!(f, "I/O error: {}", e),
-            CompilerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            CompilerError::LexerError(src, tok) => {
+            CompilerError::IO(e) => write!(f, "I/O error: {}", e),
+            CompilerError::Parser(msg) => write!(f, "Parse error: {}", msg),
+            CompilerError::Lexer(src, tok) => {
                 write!(
                     f,
                     "Lexer error: Unexpected token\n{} {}",
@@ -38,7 +38,7 @@ impl fmt::Display for CompilerError {
 
 impl fmt::Debug for CompilerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self)
     }
 }
 
