@@ -110,16 +110,15 @@ impl Iterator for Scanner<'_> {
 
                         _ => Identifier,
                     }
-                },
+                }
 
                 c if c.is_ascii_digit() => {
                     self.eat_int_literal();
 
                     match self.one_ahead() {
                         Some(c) if c.is_alphanumeric() => {
-                            self.eat_identifer();
                             Error("Identifiers cannot start with a digit")
-                        },
+                        }
                         Some(_) | None => Constant,
                     }
                 }
@@ -130,6 +129,11 @@ impl Iterator for Scanner<'_> {
                 return None;
             }
         };
+
+        // synchronize by eating until synchronization point
+        if let Error(_) = kind {
+            self.eat_while(|c| !c.is_whitespace());
+        }
 
         Some(self.emit(kind))
     }

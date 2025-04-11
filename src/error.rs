@@ -28,7 +28,7 @@ impl fmt::Display for CompilerError {
                     src.get_span(tok).unwrap(),
                     match tok.kind {
                         TokenKind::Error(msg) => msg,
-                        _ => ""
+                        _ => "",
                     }
                 )
             }
