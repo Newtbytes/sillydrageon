@@ -72,7 +72,7 @@ fn get_pos(src: &Source, offset: usize) -> Option<Position> {
                 src,
             });
         } else {
-            line_offset += line.len();
+            line_offset += line.len() + 1;
         }
     }
 
