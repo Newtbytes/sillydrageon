@@ -49,13 +49,13 @@ impl Scanner<'_> {
         }
     }
 
-    fn one_ahead(&mut self) -> Option<&char> {
-        self.src.peek()
-    }
-
     fn empty_consumed(&mut self) {
         self.offset += self.consumed.len();
         self.consumed.clear();
+    }
+
+    fn at_word_bound(&mut self) -> bool {
+        self.eat_if(is_word).is_none()
     }
 
     fn emit(&mut self, token: TokenKind) -> Token {
@@ -71,7 +71,7 @@ impl Scanner<'_> {
     }
 
     fn eat_identifer(&mut self) {
-        self.eat_while(is_identifier);
+        self.eat_while(is_word);
     }
 
     fn eat_int_literal(&mut self) {
@@ -79,7 +79,8 @@ impl Scanner<'_> {
     }
 }
 
-fn is_identifier(c: &char) -> bool {
+
+fn is_word(c: &char) -> bool {
     matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_')
 }
 
@@ -106,24 +107,28 @@ impl Iterator for Scanner<'_> {
                 'a'..='z' | 'A'..='Z' | '_' => {
                     self.eat_identifer();
 
-                    // handle keywords
-                    match self.consumed.as_str() {
-                        "void" => Void,
-                        "int" => Int,
-                        "return" => Return,
+                    match self.at_word_bound() {
+                        // handle keywords
+                        true => match self.consumed.as_str() {
+                            "void" => Void,
+                            "int" => Int,
+                            "return" => Return,
 
-                        _ => Identifier,
+                            _ => Identifier,
+                        },
+                        // if the next character isn't \b
+                        false => Error("Invalid identifier"),
                     }
                 }
 
                 c if c.is_ascii_digit() => {
                     self.eat_int_literal();
 
-                    match self.one_ahead() {
-                        Some(c) if c.is_alphanumeric() => {
-                            Error("Identifiers cannot start with a digit")
-                        }
-                        Some(_) | None => Constant,
+                    if self.at_word_bound() {
+                        Constant
+                    }
+                    else {
+                        Error("Invalid constant")
                     }
                 }
 
