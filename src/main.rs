@@ -1,12 +1,14 @@
+use error::CompilerError;
+
 mod codegen;
 mod driver;
 mod error;
 mod parser;
 mod src;
 
-fn main() {
+fn main() -> Result<(), CompilerError> {
     match driver::run_compiler() {
-        Err(e) => eprintln!("{}", e),
-        _ => {}
+        Err(e) => Err(e),
+        _ => Ok(()),
     }
 }

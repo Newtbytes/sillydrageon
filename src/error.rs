@@ -1,9 +1,9 @@
-use std::fmt;
+use std::fmt::{self};
+use std::process::Termination;
 
 use crate::parser::Token;
 use crate::src::Source;
 
-#[derive(Debug)]
 pub enum CompilerError {
     IoError(std::io::Error),
     ParseError(String),
@@ -24,7 +24,7 @@ impl fmt::Display for CompilerError {
             CompilerError::LexerError(src, tok) => {
                 write!(
                     f,
-                    "Lexer error: Unexpected token:\n{}",
+                    "Lexer error: Unexpected token\n{}",
                     src.get_span(tok).unwrap()
                 )
             }
@@ -32,4 +32,16 @@ impl fmt::Display for CompilerError {
     }
 }
 
+impl fmt::Debug for CompilerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
+
 impl std::error::Error for CompilerError {}
+
+impl Termination for CompilerError {
+    fn report(self) -> std::process::ExitCode {
+        todo!()
+    }
+}
