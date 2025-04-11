@@ -4,6 +4,7 @@ use std::str;
 use super::ast::{Token, TokenKind};
 use crate::error::CompilerError;
 
+#[derive(Debug)]
 struct Scanner<'a> {
     src: Peekable<str::Chars<'a>>,
     consumed: String,
@@ -49,13 +50,27 @@ impl Scanner<'_> {
         }
     }
 
+    fn eat_until<P>(&mut self, mut predicate: P)
+    where
+        P: FnMut(&char) -> bool,
+    {
+        self.eat_while(|c| !predicate(c))
+    }
+
     fn empty_consumed(&mut self) {
         self.offset += self.consumed.len();
         self.consumed.clear();
     }
+    
+    fn one_ahead(&mut self) -> Option<&char> {
+        self.src.peek()
+    }
 
     fn at_word_bound(&mut self) -> bool {
-        self.eat_if(is_word).is_none()
+        match self.one_ahead() {
+            Some(c) => !is_word(c),
+            None => true,
+        }
     }
 
     fn emit(&mut self, token: TokenKind) -> Token {
@@ -141,7 +156,7 @@ impl Iterator for Scanner<'_> {
 
         // synchronize by eating until synchronization point
         if let Error(_) = kind {
-            self.eat_while(|c| !c.is_whitespace());
+            self.eat_until(|&c| !is_word(&c));
         }
 
         Some(self.emit(kind))
