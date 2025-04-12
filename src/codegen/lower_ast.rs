@@ -6,6 +6,7 @@ use asm::*;
 fn lower_expr(expr: &parser::Expr) -> asm::Operand {
     match expr {
         parser::Expr::Constant(value) => Operand::Imm(*value),
+        parser::Expr::Unary(unary_op, expr) => todo!(),
     }
 }
 
