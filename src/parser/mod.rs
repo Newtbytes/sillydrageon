@@ -27,10 +27,10 @@ fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
             TokenKind::Constant => Expr::Constant(tok.value.parse().unwrap()),
             TokenKind::Negate | TokenKind::Complement => {
                 let inner_expr = parse_expr(tokens)?;
-                Expr::Unary(todo!(), Box::new(inner_expr))
+                Expr::Unary(todo!("parse_unaryop"), Box::new(inner_expr))
             }
             TokenKind::LParen => {
-                tokens.next();
+                tokens.next().ok_or("Reached unclosed parentheses due to EOF")?;
                 let inner_expr = parse_expr(tokens)?;
                 expect(TokenKind::RParen, tokens)?;
                 inner_expr
