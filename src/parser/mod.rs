@@ -22,9 +22,26 @@ fn parse_statement<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stm
 }
 
 fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
-    let value = expect(TokenKind::Constant, tokens)?;
+    let expr = match tokens.next() {
+        Some(tok) => match tok.kind {
+            TokenKind::Constant => Expr::Constant(tok.value.parse().unwrap()),
+            TokenKind::Negate | TokenKind::Complement => {
+                let inner_expr = parse_expr(tokens)?;
+                Expr::Unary(todo!(), Box::new(inner_expr))
+            }
+            TokenKind::LParen => {
+                tokens.next();
+                let inner_expr = parse_expr(tokens)?;
+                expect(TokenKind::RParen, tokens)?;
+                inner_expr
+            }
+            TokenKind::Error(msg) => return Err(msg.to_owned()),
+            _ => return Err("Malformed expression".to_owned())
+        },
+        None => todo!(),
+    };
 
-    Ok(Expr::Constant(value.value.parse().unwrap()))
+    Ok(expr)
 }
 
 fn parse_function<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Decl> {
