@@ -2,34 +2,43 @@ use std::iter::Peekable;
 use std::str;
 
 use super::ast::{Token, TokenKind};
+use crate::error::CompilerError;
 
+#[derive(Debug)]
 struct Scanner<'a> {
     src: Peekable<str::Chars<'a>>,
     consumed: String,
+    offset: usize,
+}
+
+impl<'a> From<&'a str> for Scanner<'a> {
+    fn from(value: &'a str) -> Self {
+        Scanner {
+            src: value.chars().peekable(),
+            consumed: String::new(),
+            offset: 0,
+        }
+    }
 }
 
 impl Scanner<'_> {
     fn eat(&mut self) -> Option<char> {
-        let c = self.src.next();
+        let c = self.src.next()?;
 
-        if let Some(c) = c {
-            self.consumed.push(c);
-        }
+        self.consumed.push(c);
 
-        c
+        Some(c)
     }
 
     fn eat_if<P>(&mut self, mut predicate: P) -> Option<char>
     where
         P: FnMut(&char) -> bool,
     {
-        let ch = self.src.next_if(&mut predicate);
+        let c = self.src.next_if(&mut predicate)?;
 
-        if let Some(c) = ch {
-            self.consumed.push(c);
-        }
+        self.consumed.push(c);
 
-        ch
+        Some(c)
     }
 
     fn eat_while<P>(&mut self, mut predicate: P)
@@ -41,20 +50,53 @@ impl Scanner<'_> {
         }
     }
 
+    fn eat_until<P>(&mut self, mut predicate: P)
+    where
+        P: FnMut(&char) -> bool,
+    {
+        self.eat_while(|c| !predicate(c))
+    }
+
+    fn empty_consumed(&mut self) {
+        self.offset += self.consumed.len();
+        self.consumed.clear();
+    }
+    
     fn one_ahead(&mut self) -> Option<&char> {
         self.src.peek()
+    }
+
+    fn at_word_bound(&mut self) -> bool {
+        match self.one_ahead() {
+            Some(c) => !is_word(c),
+            None => true,
+        }
     }
 
     fn emit(&mut self, token: TokenKind) -> Token {
         let tok = Token {
             kind: token,
             value: self.consumed.clone(),
+            offset: self.offset,
         };
 
-        self.consumed.clear();
+        self.empty_consumed();
 
         tok
     }
+
+    fn eat_identifer(&mut self) {
+        self.eat_while(is_word);
+    }
+
+    fn eat_int_literal(&mut self) {
+        self.eat_while(char::is_ascii_digit);
+    }
+}
+
+
+fn is_word(c: &char) -> bool {
+    matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_')
 }
 
 impl Iterator for Scanner<'_> {
@@ -65,7 +107,7 @@ impl Iterator for Scanner<'_> {
 
         // skip whitespace
         self.eat_while(|&c| c.is_whitespace());
-        self.consumed.clear();
+        self.empty_consumed();
 
         let kind = match self.eat() {
             Some(c) => match c {
@@ -88,54 +130,54 @@ impl Iterator for Scanner<'_> {
                 ';' => Semicolon,
 
                 'a'..='z' | 'A'..='Z' | '_' => {
-                    self.eat_while(|&c| matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_'));
+                    self.eat_identifer();
 
-                    // handle keywords
-                    match self.consumed.as_str() {
-                        "void" => Void,
-                        "int" => Int,
-                        "return" => Return,
+                    match self.at_word_bound() {
+                        // handle keywords
+                        true => match self.consumed.as_str() {
+                            "void" => Void,
+                            "int" => Int,
+                            "return" => Return,
 
-                        _ => Identifier,
+                            _ => Identifier,
+                        },
+                        // if the next character isn't \b
+                        false => Error("Invalid identifier"),
                     }
                 }
 
                 c if c.is_ascii_digit() => {
-                    self.eat_while(|&c| c.is_ascii_digit());
+                    self.eat_int_literal();
 
-                    if let Some(c) = self.one_ahead() {
-                        if c.is_alphanumeric() {
-                            panic!("Lexer error");
-                        }
+                    if self.at_word_bound() {
+                        Constant
                     }
-
-                    Constant
+                    else {
+                        Error("Invalid constant")
+                    }
                 }
 
-                _ => panic!("lexer error"),
+                _ => Error(""),
             },
             None => {
                 return None;
             }
         };
 
+        // synchronize by eating until synchronization point
+        if let Error(_) = kind {
+            self.eat_until(|&c| !is_word(&c));
+        }
+
         Some(self.emit(kind))
     }
 }
 
-pub fn tokenize(src: &str) -> Vec<Token> {
-    let src = src.chars().peekable();
-    let scanner: Scanner = Scanner {
-        src,
-        consumed: String::new(),
-    };
-
-    scanner.collect()
-}
-
-pub fn tokens(src: &str) -> impl Iterator<Item = Token> {
-    Scanner {
-        src: src.chars().peekable(),
-        consumed: String::new(),
-    }
+pub fn tokenize(src: &str) -> Result<Vec<Token>, CompilerError> {
+    Scanner::from(src)
+        .map(|tok| match tok.kind {
+            TokenKind::Error(_) => Err(CompilerError::Lexer(src.into(), tok)),
+            _ => Ok(tok),
+        })
+        .collect()
 }

@@ -5,6 +5,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::codegen;
+use crate::error::CompilerError;
+use crate::parser;
+
 const CC: &str = "gcc";
 
 #[derive(Clone, PartialEq)]
@@ -133,4 +137,58 @@ pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
         .output()?;
 
     Ok(dst)
+}
+
+#[derive(clap::Parser)]
+pub struct Cli {
+    input: String,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    lex: bool,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    parse: bool,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    codegen: bool,
+}
+
+pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
+    let input_fn = cli.input;
+
+    let file = ProcFile::from_fn(&input_fn)
+        .ok_or_else(|| CompilerError::Parser("Invalid source file".to_string()))?;
+
+    let src_file = preprocess(file)?;
+    let asm_file = src_file.to_kind(ProcFileKind::Assembly);
+    let src = src_file.read()?;
+
+    // tokenization
+    let tokens = parser::tokenize(&src)?;
+
+    if cli.lex {
+        dbg!(&tokens);
+        return Ok(());
+    }
+
+    // parsing
+    let ast = parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)?;
+
+    if cli.parse {
+        dbg!(ast);
+        return Ok(());
+    }
+
+    // codegen
+    let asm = codegen::lower(&ast);
+    let asm = codegen::emit(&asm);
+    if cli.codegen {
+        println!("{}", asm);
+        return Ok(());
+    }
+
+    asm_file.write(asm)?;
+    assemble(asm_file)?;
+
+    Ok(())
 }

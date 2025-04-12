@@ -23,12 +23,15 @@ pub enum TokenKind {
     RBrace,
 
     Semicolon,
+
+    Error(&'static str),
 }
 
 #[derive(Debug)]
 pub struct Token {
     pub kind: TokenKind,
     pub value: String,
+    pub offset: usize,
 }
 
 // ast nodes
