@@ -1,7 +1,7 @@
 mod ast;
 mod lexer;
 
-use std::iter::{self, Peekable};
+use std::iter::{self};
 
 pub use ast::*;
 pub use lexer::*;
@@ -100,8 +100,11 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 }
 
-pub fn parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> ParseResult<Program> {
-    let mut parser = Parser { tokens };
+pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
+    let mut tokens = tokens.peekable();
+    let mut parser = Parser {
+        tokens: &mut tokens,
+    };
     let prg = parser.parse_program()?;
 
     if let Some(tok) = tokens.next() {
