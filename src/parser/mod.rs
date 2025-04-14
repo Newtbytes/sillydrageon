@@ -28,10 +28,9 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 
     fn expect(&mut self, expected: TokenKind) -> ParseResult<Token> {
-        match self.tokens.next() {
-            Some(token) if token.kind == expected => Ok(token),
-            None => Err("Unexpectedly reached end of input".to_owned()),
-            Some(unexpected) => Err(format!("Unexpectedly got '{}'", unexpected.value)),
+        match self.take()? {
+            token if token.kind == expected => Ok(token),
+            unexpected => Err(format!("Unexpectedly got '{}'", unexpected.value)),
         }
     }
 
@@ -42,11 +41,33 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
         Ok(Stmt::Return(return_val?))
     }
 
-fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
-    let value = expect(TokenKind::Constant, tokens)?;
+    fn parse_unaryop(&mut self) -> ParseResult<UnaryOp> {
+        match self.take()?.kind {
+            TokenKind::Complement => todo!(),
+            TokenKind::Negate => todo!(),
+            TokenKind::Error(msg) => Err(msg.to_owned()),
+            _ => Err("".to_owned()),
+        }
+    }
 
-    Ok(Expr::Constant(value.value.parse().unwrap()))
-}
+    fn parse_expr(&mut self) -> ParseResult<Expr> {
+        let expr = match self.peek()?.kind {
+            TokenKind::Constant => {
+                let token = self.expect(TokenKind::Constant)?;
+                Expr::Constant(token.value.parse().unwrap())
+            }
+            TokenKind::LParen => {
+                self.expect(TokenKind::LParen)?;
+                let inner_expr = self.parse_expr()?;
+                self.expect(TokenKind::RParen)?;
+                inner_expr
+            }
+            TokenKind::Error(msg) => return Err(msg.to_owned()),
+            _ => return Err("Malformed expression".to_owned()),
+        };
+
+        Ok(expr)
+    }
 
     fn parse_function(&mut self) -> ParseResult<Decl> {
         self.expect(TokenKind::Int)?;
