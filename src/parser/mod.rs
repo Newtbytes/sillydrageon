@@ -14,10 +14,16 @@ struct Parser<'a, I: Iterator<Item = Token>> {
 
 impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     fn take(&mut self) -> ParseResult<Token> {
-        return self
+        let token = self
             .tokens
             .next()
-            .ok_or("Unexpectedly reach end of file".to_owned());
+            .ok_or("Unexpectedly reach end of file".to_owned())?;
+
+        if let TokenKind::Error(msg) = token.kind {
+            Err(msg.to_owned())
+        } else {
+            Ok(token)
+        }
     }
 
     fn peek(&mut self) -> ParseResult<&Token> {
@@ -45,7 +51,6 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
         match self.take()?.kind {
             TokenKind::Complement => Ok(UnaryOp::Complement),
             TokenKind::Negate => Ok(UnaryOp::Negate),
-            TokenKind::Error(msg) => Err(msg.to_owned()),
             _ => Err("".to_owned()),
         }
     }
@@ -67,7 +72,6 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
                 self.expect(TokenKind::RParen)?;
                 inner_expr
             }
-            TokenKind::Error(msg) => return Err(msg.to_owned()),
             _ => return Err("Malformed expression".to_owned()),
         };
 
