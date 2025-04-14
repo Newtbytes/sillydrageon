@@ -43,8 +43,8 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
 
     fn parse_unaryop(&mut self) -> ParseResult<UnaryOp> {
         match self.take()?.kind {
-            TokenKind::Complement => todo!(),
-            TokenKind::Negate => todo!(),
+            TokenKind::Complement => Ok(UnaryOp::Complement),
+            TokenKind::Negate => Ok(UnaryOp::Negate),
             TokenKind::Error(msg) => Err(msg.to_owned()),
             _ => Err("".to_owned()),
         }
