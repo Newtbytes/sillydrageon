@@ -28,10 +28,9 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 
     fn expect(&mut self, expected: TokenKind) -> ParseResult<Token> {
-        match self.tokens.next() {
-            Some(token) if token.kind == expected => Ok(token),
-            None => Err("Unexpectedly reached end of input".to_owned()),
-            Some(unexpected) => Err(format!("Unexpectedly got '{}'", unexpected.value)),
+        match self.take()? {
+            token if token.kind == expected => Ok(token),
+            unexpected => Err(format!("Unexpectedly got '{}'", unexpected.value)),
         }
     }
 
@@ -43,14 +42,11 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 
     fn parse_unaryop(&mut self) -> ParseResult<UnaryOp> {
-        match self.tokens.next() {
-            Some(tok) => match tok.kind {
-                TokenKind::Complement => todo!(),
-                TokenKind::Negate => todo!(),
-                TokenKind::Error(msg) => Err(msg.to_owned()),
-                _ => Err("".to_owned()),
-            },
-            None => todo!(),
+        match self.take()?.kind {
+            TokenKind::Complement => todo!(),
+            TokenKind::Negate => todo!(),
+            TokenKind::Error(msg) => Err(msg.to_owned()),
+            _ => Err("".to_owned()),
         }
     }
 
