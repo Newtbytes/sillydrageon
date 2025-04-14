@@ -1,25 +1,46 @@
 mod ast;
 mod lexer;
 
+use std::iter::{self, Peekable};
+
 pub use ast::*;
 pub use lexer::*;
 
 type ParseResult<T> = Result<T, String>;
 
-fn expect<T: Iterator<Item = Token>>(expected: TokenKind, tokens: &mut T) -> ParseResult<Token> {
-    match tokens.next() {
-        Some(token) if token.kind == expected => Ok(token),
-        None => Err("Unexpectedly reached end of input".to_owned()),
-        Some(unexpected) => Err(format!("Unexpectedly got '{}'", unexpected.value)),
-    }
+struct Parser<'a, I: Iterator<Item = Token>> {
+    tokens: &'a mut iter::Peekable<I>,
 }
 
-fn parse_statement<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Stmt> {
-    expect(TokenKind::Return, tokens)?;
-    let return_val: Result<Expr, String> = parse_expr(tokens);
-    expect(TokenKind::Semicolon, tokens)?;
-    Ok(Stmt::Return(return_val?))
-}
+impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
+    fn take(&mut self) -> ParseResult<Token> {
+        return self
+            .tokens
+            .next()
+            .ok_or("Unexpectedly reach end of file".to_owned());
+    }
+
+    fn peek(&mut self) -> ParseResult<&Token> {
+        return self
+            .tokens
+            .peek()
+            .ok_or("Unexpectedly reach end of file".to_owned());
+    }
+
+    fn expect(&mut self, expected: TokenKind) -> ParseResult<Token> {
+        match self.tokens.next() {
+            Some(token) if token.kind == expected => Ok(token),
+            None => Err("Unexpectedly reached end of input".to_owned()),
+            Some(unexpected) => Err(format!("Unexpectedly got '{}'", unexpected.value)),
+        }
+    }
+
+    fn parse_statement(&mut self) -> ParseResult<Stmt> {
+        self.expect(TokenKind::Return)?;
+        let return_val: Result<Expr, String> = self.parse_expr();
+        self.expect(TokenKind::Semicolon)?;
+        Ok(Stmt::Return(return_val?))
+    }
 
 fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
     let value = expect(TokenKind::Constant, tokens)?;
@@ -27,29 +48,31 @@ fn parse_expr<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Expr> {
     Ok(Expr::Constant(value.value.parse().unwrap()))
 }
 
-fn parse_function<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Decl> {
-    expect(TokenKind::Int, tokens)?;
-    let name = expect(TokenKind::Identifier, tokens)?;
+    fn parse_function(&mut self) -> ParseResult<Decl> {
+        self.expect(TokenKind::Int)?;
+        let name = self.expect(TokenKind::Identifier)?;
 
-    expect(TokenKind::LParen, tokens)?;
-    expect(TokenKind::Void, tokens)?;
-    expect(TokenKind::RParen, tokens)?;
+        self.expect(TokenKind::LParen)?;
+        self.expect(TokenKind::Void)?;
+        self.expect(TokenKind::RParen)?;
 
-    expect(TokenKind::LBrace, tokens)?;
-    let body = parse_statement(tokens)?;
-    expect(TokenKind::RBrace, tokens)?;
+        self.expect(TokenKind::LBrace)?;
+        let body = self.parse_statement()?;
+        self.expect(TokenKind::RBrace)?;
 
-    Ok(Decl::Function(name.value, Box::new(body)))
+        Ok(Decl::Function(name.value, Box::new(body)))
+    }
+
+    fn parse_program(&mut self) -> ParseResult<Program> {
+        let func = self.parse_function()?;
+
+        Ok(Program { body: func })
+    }
 }
 
-fn parse_program<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
-    let func = parse_function(tokens)?;
-
-    Ok(Program { body: func })
-}
-
-pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
-    let prg = parse_program(tokens)?;
+pub fn parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> ParseResult<Program> {
+    let mut parser = Parser { tokens };
+    let prg = parser.parse_program()?;
 
     if let Some(tok) = tokens.next() {
         return Err(format!(
