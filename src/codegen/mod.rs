@@ -2,6 +2,7 @@ pub mod asm;
 
 mod emit_asm;
 mod lower_ast;
+mod tictacil;
 
 use super::parser;
 
