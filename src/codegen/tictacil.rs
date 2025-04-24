@@ -38,7 +38,7 @@ impl From<Tmp> for Value {
 }
 
 enum Operation {
-    Return(u32),
+    Return(Value),
     Unary { op: UnaryOp, src: Value, dst: Tmp },
 }
 
@@ -67,6 +67,15 @@ fn from_expr(expr: ast::Expr, ops: &mut Vec<Operation>) -> Value {
             });
 
             Value::from(tmp)
+        }
+    }
+}
+
+fn from_stmt(stmt: ast::Stmt, ops: &mut Vec<Operation>) -> Operation {
+    match stmt {
+        ast::Stmt::Return(expr) => {
+            let val = from_expr(expr, ops);
+            Operation::Return(val)
         }
     }
 }
