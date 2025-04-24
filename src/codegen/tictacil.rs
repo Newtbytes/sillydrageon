@@ -37,6 +37,12 @@ impl From<Tmp> for Value {
     }
 }
 
+impl From<u32> for Value {
+    fn from(val: u32) -> Self {
+        Value::Const(val)
+    }
+}
+
 enum Operation {
     Return(Value),
     Unary { op: UnaryOp, src: Value, dst: Tmp },
