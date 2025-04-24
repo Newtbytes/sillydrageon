@@ -1,10 +1,11 @@
-mod ast;
-mod lexer;
+pub mod ast;
+pub mod lexer;
 
 use std::iter::{self};
 
-pub use ast::*;
-pub use lexer::*;
+use ast::*;
+
+pub use lexer::tokenize;
 
 type ParseResult<T> = Result<T, String>;
 

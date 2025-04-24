@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::parser::Token;
+use crate::parser::ast::Token;
 
 #[derive(Debug)]
 pub struct Source {

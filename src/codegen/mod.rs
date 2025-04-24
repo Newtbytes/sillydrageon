@@ -4,10 +4,10 @@ mod emit_asm;
 mod lower_ast;
 mod tictacil;
 
-use super::parser;
+use super::parser::ast;
 
 // alias
-pub fn lower(prg: &parser::Program) -> asm::Program {
+pub fn lower(prg: &ast::Program) -> asm::Program {
     lower_ast::lower_program(prg)
 }
 
