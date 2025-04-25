@@ -1,49 +1,55 @@
+use lorax::{Rewritable, rewrite, rewrite_rule};
+
 use super::asm::*;
 
-fn emit_operand(operand: &Operand) -> String {
-    match operand {
+rewrite_rule! {
+    Operand => String {
         Operand::Imm(value) => format!("${value}"),
         Operand::Register => "%eax".to_owned(),
     }
 }
 
-fn emit_instruction(ins: &Instruction) -> String {
-    match ins {
+rewrite_rule! {
+    Instruction => String {
         Instruction::Mov { src, dst } => {
-            let (src, dst) = (emit_operand(src), emit_operand(dst));
+            let (src, dst) = (rewrite(src), rewrite(dst));
             format!("movl   {src},{dst}")
-        }
-        Instruction::Ret => "ret".to_owned(),
+        },
+        Instruction::Ret => "ret".to_owned()
     }
 }
 
-fn emit_decl(decl: &Decl) -> String {
-    match decl {
+rewrite_rule! {
+    Decl => String {
         Decl::Function { name, body } => {
             let mut ins = String::new();
 
             body.iter().for_each(|x| {
-                ins.push_str(&("    ".to_owned() + &emit_instruction(x) + "\n"));
+                ins.push_str(&("    ".to_owned() + &rewrite(x) + "\n"));
             });
 
             // TODO: find a better way to ensure good looking indentation
-            format!(
-                "\
+            format!("\
     .globl {name}
 
 {name}:
-{ins}"
-            )
+{ins}")
         }
     }
 }
 
-pub fn emit_program(prg: &Program) -> String {
-    let body = emit_decl(&prg.body);
+rewrite_rule! {
+    Program => String {
+        Program { body } => {
+            let body = rewrite(body);
 
-    format!(
-        "\
+            format!("\
 {body}
-.section .note.GNU-stack,\"\",@progbits"
-    )
+.section .note.GNU-stack,\"\",@progbits")
+        }
+    }
+}
+
+pub fn emit(prg: &Program) -> String {
+    rewrite::<Program, String>(prg)
 }
