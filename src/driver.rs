@@ -5,7 +5,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::codegen;
+use crate::asm;
 use crate::error::CompilerError;
 use crate::parser;
 
@@ -180,8 +180,8 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     // codegen
-    let asm = codegen::lower(&ast);
-    let asm = codegen::emit(&asm);
+    let asm = asm::lower_ast(&ast);
+    let asm = asm::emit(&asm);
     if cli.codegen {
         println!("{}", asm);
         return Ok(());

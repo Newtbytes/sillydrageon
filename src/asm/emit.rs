@@ -1,6 +1,6 @@
 use lorax::{Rewritable, rewrite, rewrite_rule};
 
-use super::asm::*;
+use super::nodes::*;
 
 rewrite_rule! {
     Operand => String {
@@ -48,8 +48,4 @@ rewrite_rule! {
 .section .note.GNU-stack,\"\",@progbits")
         }
     }
-}
-
-pub fn emit(prg: &Program) -> String {
-    rewrite::<Program, String>(prg)
 }
