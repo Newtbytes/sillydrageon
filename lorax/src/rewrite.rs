@@ -1,12 +1,27 @@
-pub trait Rewritable<T> {
-    fn rewrite(node: &Self) -> T;
+use std::ops::Deref;
+
+pub trait Rewritable<To> {
+    fn rewrite(_: &Self) -> To;
 }
 
-pub fn rewrite<F, T>(node: &F) -> T
+pub trait RewriteRule<From, To> {
+    fn apply(&self, _: &From) -> To;
+}
+
+impl<From, To> RewriteRule<From, To> for From
 where
-    F: Rewritable<T>,
+    From: Rewritable<To>,
 {
-    Rewritable::rewrite(node)
+    fn apply(&self, node: &From) -> To {
+        From::rewrite(node)
+    }
+}
+
+pub fn rewrite<From, To>(node: &From) -> To
+where
+    From: Rewritable<To>,
+{
+    node.apply(node)
 }
 
 #[macro_export]
@@ -16,9 +31,15 @@ macro_rules! rewrite_rule {
             fn rewrite(node: &Self) -> $to {
                 match node {
                     $($pattern => $result,)*
-                    _ => panic!("Rewrite rule not covered for {:?}", node),
+                    _ => unreachable!("Rewrite rule not covered for {:?}", node),
                 }
             }
         }
+    };
+
+    ($($from:ty => $to:ty { $($pattern:pat => $result:expr),* $(,)? })+) => {
+        $(
+            rewrite_rule! { $from => $to { $($pattern => $result),* } }
+        )+
     };
 }

@@ -9,12 +9,12 @@ pub struct Function {
     body: Vec<Operation>,
 }
 
-#[derive(Clone, Copy)]
-pub struct Tmp {
+#[derive(Clone)]
+pub struct Var {
     id: usize,
 }
 
-impl Tmp {
+impl Var {
     pub fn new() -> Self {
         static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
@@ -26,12 +26,12 @@ impl Tmp {
 
 pub enum Value {
     Const(u32),
-    Tmp(Tmp),
+    Var(Var),
 }
 
-impl From<Tmp> for Value {
-    fn from(tmp: Tmp) -> Self {
-        Value::Tmp(tmp)
+impl From<Var> for Value {
+    fn from(var: Var) -> Self {
+        Value::Var(var)
     }
 }
 
@@ -41,9 +41,29 @@ impl From<u32> for Value {
     }
 }
 
+pub trait HasResult {
+    fn result(&self) -> Var;
+}
+
 pub enum Operation {
     Return(Value),
-    Unary { op: UnaryOp, src: Value, dst: Tmp },
+    Unary { op: UnaryOp, src: Value, dst: Var },
+}
+
+impl HasResult for Operation {
+    fn result(&self) -> Var {
+        match self {
+            Operation::Unary { op: _, src: _, dst } => dst.clone(),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl HasResult for Vec<Operation> {
+    fn result(&self) -> Var {
+        // FIXME hacky unwrap()
+        self.last().unwrap().result()
+    }
 }
 
 pub enum UnaryOp {

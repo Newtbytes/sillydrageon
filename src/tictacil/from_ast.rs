@@ -1,35 +1,35 @@
+use lorax::{Rewritable, rewrite, rewrite_rule};
+
 use super::nodes as il;
-use crate::parser::ast;
+use crate::{parser::ast, tictacil::HasResult};
 
-fn from_expr(expr: ast::Expr, ops: &mut Vec<il::Operation>) -> il::Value {
-    match expr {
-        ast::Expr::Constant(val) => il::Value::Const(val),
-
-        ast::Expr::Unary(op, expr) => {
-            let opcode = match op {
-                ast::UnaryOp::Complement => il::UnaryOp::Complement,
-                ast::UnaryOp::Negate => il::UnaryOp::Negate,
-            };
-
-            let tmp = il::Tmp::new();
-            let operand = from_expr(*expr, ops);
-
-            ops.push(il::Operation::Unary {
-                op: opcode,
-                src: operand,
-                dst: tmp,
-            });
-
-            il::Value::from(tmp)
+rewrite_rule! {
+    ast::Stmt => il::Operation {
+        ast::Stmt::Return(expr) => {
+            il::Operation::Return(rewrite(expr))
         }
     }
-}
 
-fn from_stmt(stmt: ast::Stmt, ops: &mut Vec<il::Operation>) -> il::Operation {
-    match stmt {
-        ast::Stmt::Return(expr) => {
-            let val = from_expr(expr, ops);
-            il::Operation::Return(val)
+    ast::Expr => il::Value {
+        ast::Expr::Constant(val) => il::Value::Const(*val),
+    }
+
+    ast::Expr => Vec<il::Operation> {
+        ast::Expr::Unary(op, expr) => {
+            let mut src = rewrite::<ast::Expr, Vec<il::Operation>>(expr);
+
+            src.push(il::Operation::Unary {
+                op: rewrite(op),
+                src: il::Value::Var(src.result()),
+                dst: il::Var::new(),
+            });
+
+            src
         }
+    }
+
+    ast::UnaryOp => il::UnaryOp {
+        ast::UnaryOp::Complement => il::UnaryOp::Complement,
+        ast::UnaryOp::Negate => il::UnaryOp::Negate,
     }
 }

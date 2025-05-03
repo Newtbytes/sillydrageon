@@ -1,3 +1,5 @@
-pub mod rewrite;
+mod rewrite;
+mod shape;
 
-pub use rewrite::{Rewritable, rewrite};
+pub use rewrite::{Rewritable, RewriteRule, rewrite};
+pub use shape::Tmp;
