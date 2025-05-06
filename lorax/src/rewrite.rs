@@ -1,45 +1,45 @@
-use std::ops::Deref;
-
-pub trait Rewritable<To> {
-    fn rewrite(_: &Self) -> To;
+struct RuleMatch<T> {
+    node: T,
 }
 
-pub trait RewriteRule<From, To> {
-    fn apply(&self, _: &From) -> To;
-}
+pub trait RewriteRule<T> {
+    fn matches(&self, node: &T) -> Option<RuleMatch<T>>;
+    fn rewrite(&self, node: &RuleMatch<T>) -> T;
 
-impl<From, To> RewriteRule<From, To> for From
-where
-    From: Rewritable<To>,
-{
-    fn apply(&self, node: &From) -> To {
-        From::rewrite(node)
+    fn apply(&self, node: &T) -> Option<T> {
+        if let Some(matched) = self.matches(&node) {
+            Some(self.rewrite(&matched))
+        } else {
+            None
+        }
     }
-}
-
-pub fn rewrite<From, To>(node: &From) -> To
-where
-    From: Rewritable<To>,
-{
-    node.apply(node)
 }
 
 #[macro_export]
 macro_rules! rewrite_rule {
-    ($from:ty => $to:ty { $($pattern:pat => $result:expr),* $(,)? }) => {
-        impl Rewritable<$to> for $from {
-            fn rewrite(node: &Self) -> $to {
+    (@rules $($lhs:pat => $rhs:expr),* $(,)?) => {
+        match node {
+            $($lhs => Some(RuleMatch { node: $rhs }),)*
+            _ => None,
+        }
+    }
+
+    ($name:ident<$node:ty> { $($rule:tt)* }) => {
+        strict $name;
+        impl RewriteRule<$node> for $name {
+            fn matches(&self, node: &$node) -> Option<RuleMatch<$node>> {
                 match node {
-                    $($pattern => $result,)*
-                    _ => unreachable!("Rewrite rule not covered for {:?}", node),
+                    $($lhs => Some(RuleMatch { node: $rhs }),)*
+                    _ => None,
+                }
+            }
+
+            fn rewrite(&self, node: &RuleMatch<$node>) -> $node {
+                match node.node {
+                    $($lhs => $rhs,)*
+                    _ => unreachable!(),
                 }
             }
         }
-    };
-
-    ($($from:ty => $to:ty { $($pattern:pat => $result:expr),* $(,)? })+) => {
-        $(
-            rewrite_rule! { $from => $to { $($pattern => $result),* } }
-        )+
-    };
+    }
 }
