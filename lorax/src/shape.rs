@@ -1,11 +1,11 @@
 use std::sync::atomic;
 
 #[derive(Clone, Copy)]
-pub struct Tmp {
+pub struct Var {
     id: usize,
 }
 
-impl Tmp {
+impl Var {
     pub fn new() -> Self {
         static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
@@ -15,22 +15,29 @@ impl Tmp {
     }
 }
 
-enum Operand {
-    Imm(i32),
-    Tmp(Tmp),
-    Region(Region),
+pub enum Value {
+    Concrete(i32),
+    Symbolic(Var),
 }
 
-struct Operation {
-    dst: Tmp,
-    lhs: Operand,
-    rhs: Operand,
+pub struct Operation {
+    name: String,
+    operands: Vec<Value>,
+    regions: Vec<Region>,
 }
 
-struct Block {
-    body: Vec<Operation>,
+pub struct Block {
+    pub body: Vec<Operation>,
+    var_id_counter: usize,
+    args: Vec<Var>,
 }
 
-struct Region {
-    body: Vec<Block>,
+pub struct Region {
+    pub body: Vec<Block>,
+}
+
+macro_rules! op_rewrite {
+    ($name:ident { $($rule:tt)* }) => {
+        rewrite_rule! { $name<Operation> { $($rule)* } }
+    };
 }
