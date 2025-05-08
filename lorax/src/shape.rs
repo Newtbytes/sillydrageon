@@ -75,12 +75,12 @@ impl Display for Operation {
 }
 
 impl Operation {
-    fn get_result(&self) -> Var {
+    pub fn get_result(&self) -> Var {
         self.result
             .expect("this should be called on an op with at least one result")
     }
 
-    fn get_mut_result(&mut self) -> &mut Var {
+    pub fn get_mut_result(&mut self) -> &mut Var {
         self.result
             .as_mut()
             .expect("this should be called on an op with at least one result")
@@ -103,13 +103,12 @@ impl Block {
         self.operations.iter()
     }
 
-    pub fn push(&mut self, op: Operation) -> Var {
+    pub fn push(&mut self, op: Operation) -> &Operation {
         self.operations.push(op);
 
         self.operations
             .last()
             .expect("push always increases length")
-            .get_result()
     }
 }
 

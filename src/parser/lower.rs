@@ -15,7 +15,7 @@ fn lower_expr(block: &mut Block, expr: &ast::Expr) -> Value {
         ast::Expr::Constant(val) => return Constant { val: *val }.into(),
     };
 
-    block.push(op).into()
+    block.push(op).get_result().into()
 }
 
 pub fn lower_stmt(block: &mut Block, stmt: &ast::Stmt) {
