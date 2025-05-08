@@ -1,6 +1,6 @@
-use std::sync::atomic;
+use std::{fmt::Display, sync::atomic};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Var {
     id: usize,
 }
@@ -15,29 +15,123 @@ impl Var {
     }
 }
 
+impl Display for Var {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "%{}", self.id)
+    }
+}
+
+#[derive(Debug)]
+pub struct Constant {
+    pub val: u32,
+}
+
+#[derive(Debug)]
 pub enum Value {
-    Concrete(i32),
-    Symbolic(Var),
+    Var(Var),
+    Const(Constant),
 }
 
+impl From<Constant> for Value {
+    fn from(val: Constant) -> Self {
+        Self::Const(val)
+    }
+}
+
+impl From<Var> for Value {
+    fn from(var: Var) -> Self {
+        Self::Var(var)
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Var(var) => write!(f, "{}", var),
+            Value::Const(imm) => write!(f, "{}", imm.val),
+        }
+    }
+}
+
+pub type OpResult = Option<Var>;
+
+#[derive(Debug)]
 pub struct Operation {
-    name: String,
-    operands: Vec<Value>,
-    regions: Vec<Region>,
+    pub name: String,
+    // pub operands: Vec<Operand>,
+    pub operands: Value,
+    // pub regions: Vec<Region>,
+    pub result: OpResult,
 }
 
+impl Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(var) = self.result {
+            write!(f, "{} := {} {} ", var, self.name, self.operands)
+        } else {
+            write!(f, "{} {}", self.name, self.operands)
+        }
+    }
+}
+
+impl Operation {
+    fn get_result(&self) -> Var {
+        self.result
+            .expect("this should be called on an op with at least one result")
+    }
+
+    fn get_mut_result(&mut self) -> &mut Var {
+        self.result
+            .as_mut()
+            .expect("this should be called on an op with at least one result")
+    }
+}
+
+#[derive(Debug)]
 pub struct Block {
-    pub body: Vec<Operation>,
-    var_id_counter: usize,
-    args: Vec<Var>,
+    pub operations: Vec<Operation>,
+}
+
+impl From<Vec<Operation>> for Block {
+    fn from(ops: Vec<Operation>) -> Self {
+        Self { operations: ops }
+    }
+}
+
+impl Block {
+    pub fn ops(&self) -> impl Iterator<Item = &Operation> {
+        self.operations.iter()
+    }
+
+    pub fn push(&mut self, op: Operation) -> Var {
+        self.operations.push(op);
+
+        self.operations
+            .last()
+            .expect("push always increases length")
+            .get_result()
+    }
+}
+
+impl Display for Block {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for operation in &self.operations {
+            writeln!(f, "{}", operation)?;
+        }
+        Ok(())
+    }
 }
 
 pub struct Region {
-    pub body: Vec<Block>,
+    pub blocks: Vec<Block>,
 }
 
-macro_rules! op_rewrite {
-    ($name:ident { $($rule:tt)* }) => {
-        rewrite_rule! { $name<Operation> { $($rule)* } }
-    };
+impl Region {
+    pub fn ops(&self) -> impl Iterator<Item = &Operation> {
+        self.blocks.iter().map(Block::ops).flatten()
+    }
+
+    pub fn push(&mut self, block: Block) {
+        self.blocks.push(block);
+    }
 }

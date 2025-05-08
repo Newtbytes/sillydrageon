@@ -1,35 +1,26 @@
-use lorax::{Rewritable, rewrite, rewrite_rule};
+use lorax::{Block, Constant, Value};
 
-use super::nodes as il;
-use crate::{parser::ast, tictacil::HasResult};
+use crate::parser::ast;
 
-rewrite_rule! {
-    ast::Stmt => il::Operation {
-        ast::Stmt::Return(expr) => {
-            il::Operation::Return(rewrite(expr))
-        }
-    }
+use super::ops;
 
-    ast::Expr => il::Value {
-        ast::Expr::Constant(val) => il::Value::Const(*val),
-    }
+fn lower_expr(block: &mut Block, expr: &ast::Expr) -> Value {
+    let op = match expr {
+        ast::Expr::Unary(unary_op, expr) => match unary_op {
+            ast::UnaryOp::Complement => todo!(),
+            ast::UnaryOp::Negate => ops::neg(lower_expr(block, expr)),
+        },
 
-    ast::Expr => Vec<il::Operation> {
-        ast::Expr::Unary(op, expr) => {
-            let mut src = rewrite::<ast::Expr, Vec<il::Operation>>(expr);
+        ast::Expr::Constant(val) => return Constant { val: *val }.into(),
+    };
 
-            src.push(il::Operation::Unary {
-                op: rewrite(op),
-                src: il::Value::Var(src.result()),
-                dst: il::Var::new(),
-            });
+    block.push(op).into()
+}
 
-            src
-        }
-    }
+pub fn lower_stmt(block: &mut Block, stmt: &ast::Stmt) {
+    let op = match stmt {
+        ast::Stmt::Return(expr) => ops::ret(lower_expr(block, expr)),
+    };
 
-    ast::UnaryOp => il::UnaryOp {
-        ast::UnaryOp::Complement => il::UnaryOp::Complement,
-        ast::UnaryOp::Negate => il::UnaryOp::Negate,
-    }
+    block.push(op);
 }

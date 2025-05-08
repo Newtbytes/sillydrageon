@@ -15,31 +15,31 @@ pub trait RewriteRule<T> {
     }
 }
 
-#[macro_export]
-macro_rules! rewrite_rule {
-    (@rules $($lhs:pat => $rhs:expr),* $(,)?) => {
-        match node {
-            $($lhs => Some(RuleMatch { node: $rhs }),)*
-            _ => None,
-        }
-    }
+// #[macro_export]
+// macro_rules! rewrite_rule {
+//     (@rules $($lhs:pat => $rhs:expr),* $(,)?) => {
+//         match node {
+//             $($lhs => Some(RuleMatch { node: $rhs }),)*
+//             _ => None,
+//         }
+//     }
 
-    ($name:ident<$node:ty> { $($rule:tt)* }) => {
-        strict $name;
-        impl RewriteRule<$node> for $name {
-            fn matches(&self, node: &$node) -> Option<RuleMatch<$node>> {
-                match node {
-                    $($lhs => Some(RuleMatch { node: $rhs }),)*
-                    _ => None,
-                }
-            }
+//     ($name:ident<$node:ty> { $($rule:tt)* }) => {
+//         strict $name;
+//         impl RewriteRule<$node> for $name {
+//             fn matches(&self, node: &$node) -> Option<RuleMatch<$node>> {
+//                 match node {
+//                     $($lhs => Some(RuleMatch { node: $rhs }),)*
+//                     _ => None,
+//                 }
+//             }
 
-            fn rewrite(&self, node: &RuleMatch<$node>) -> $node {
-                match node.node {
-                    $($lhs => $rhs,)*
-                    _ => unreachable!(),
-                }
-            }
-        }
-    }
-}
+//             fn rewrite(&self, node: &RuleMatch<$node>) -> $node {
+//                 match node.node {
+//                     $($lhs => $rhs,)*
+//                     _ => unreachable!(),
+//                 }
+//             }
+//         }
+//     }
+// }
