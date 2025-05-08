@@ -20,7 +20,7 @@ fn main() -> () {
         Box::new(ast::Expr::Constant(1)),
     ));
 
-    let _ = tictacil::lower_stmt(&mut block, &stmt);
+    let _ = parser::lower_stmt(&mut block, &stmt);
     println!("{}", block);
     // match driver::run_compiler(driver::Cli::parse()) {
     //     Err(e) => Err(e),
