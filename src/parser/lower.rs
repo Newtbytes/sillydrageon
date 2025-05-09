@@ -1,6 +1,6 @@
 // Lower the AST to TICTACIL
 
-use lorax::{Block, Constant, Value};
+use lorax::{Block, Constant, Region, Value};
 
 use super::ast;
 use crate::tictacil as il;
@@ -24,4 +24,18 @@ pub fn lower_stmt(block: &mut Block, stmt: &ast::Stmt) {
     };
 
     block.push(op);
+}
+
+pub fn lower_program(program: &ast::Program) -> Region {
+    let mut region = Region::new();
+
+    match &program.body {
+        ast::Decl::Function(_, stmt) => {
+            let mut block = Block::new();
+            lower_stmt(&mut block, &stmt);
+            region.push(block);
+        }
+    };
+
+    return region;
 }

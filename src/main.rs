@@ -3,7 +3,7 @@ use clap::Parser;
 use error::CompilerError;
 use parser::ast;
 
-//mod asm;
+mod asm;
 //mod driver;
 mod error;
 mod parser;
@@ -17,7 +17,10 @@ fn main() -> () {
 
     let stmt = ast::Stmt::Return(ast::Expr::Unary(
         ast::UnaryOp::Negate,
-        Box::new(ast::Expr::Constant(1)),
+        Box::new(ast::Expr::Unary(
+            ast::UnaryOp::Negate,
+            Box::new(ast::Expr::Constant(1)),
+        )),
     ));
 
     let _ = parser::lower_stmt(&mut block, &stmt);

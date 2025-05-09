@@ -99,6 +99,12 @@ impl From<Vec<Operation>> for Block {
 }
 
 impl Block {
+    pub fn new() -> Self {
+        Self {
+            operations: Vec::new(),
+        }
+    }
+
     pub fn ops(&self) -> impl Iterator<Item = &Operation> {
         self.operations.iter()
     }
@@ -126,6 +132,10 @@ pub struct Region {
 }
 
 impl Region {
+    pub fn new() -> Self {
+        Self { blocks: Vec::new() }
+    }
+
     pub fn ops(&self) -> impl Iterator<Item = &Operation> {
         self.blocks.iter().map(Block::ops).flatten()
     }
