@@ -1,24 +1,45 @@
-pub trait Rewritable<T> {
-    fn rewrite(node: &Self) -> T;
+struct RuleMatch<T> {
+    node: T,
 }
 
-pub fn rewrite<F, T>(node: &F) -> T
-where
-    F: Rewritable<T>,
-{
-    Rewritable::rewrite(node)
-}
+pub trait RewriteRule<T> {
+    fn matches(&self, node: &T) -> Option<RuleMatch<T>>;
+    fn rewrite(&self, node: &RuleMatch<T>) -> T;
 
-#[macro_export]
-macro_rules! rewrite_rule {
-    ($from:ty => $to:ty { $($pattern:pat => $result:expr),* $(,)? }) => {
-        impl Rewritable<$to> for $from {
-            fn rewrite(node: &Self) -> $to {
-                match node {
-                    $($pattern => $result,)*
-                    _ => panic!("Rewrite rule not covered for {:?}", node),
-                }
-            }
+    fn apply(&self, node: &T) -> Option<T> {
+        if let Some(matched) = self.matches(&node) {
+            Some(self.rewrite(&matched))
+        } else {
+            None
         }
-    };
+    }
 }
+
+// #[macro_export]
+// macro_rules! rewrite_rule {
+//     (@rules $($lhs:pat => $rhs:expr),* $(,)?) => {
+//         match node {
+//             $($lhs => Some(RuleMatch { node: $rhs }),)*
+//             _ => None,
+//         }
+//     }
+
+//     ($name:ident<$node:ty> { $($rule:tt)* }) => {
+//         strict $name;
+//         impl RewriteRule<$node> for $name {
+//             fn matches(&self, node: &$node) -> Option<RuleMatch<$node>> {
+//                 match node {
+//                     $($lhs => Some(RuleMatch { node: $rhs }),)*
+//                     _ => None,
+//                 }
+//             }
+
+//             fn rewrite(&self, node: &RuleMatch<$node>) -> $node {
+//                 match node.node {
+//                     $($lhs => $rhs,)*
+//                     _ => unreachable!(),
+//                 }
+//             }
+//         }
+//     }
+// }

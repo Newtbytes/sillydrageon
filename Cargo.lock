@@ -53,6 +53,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "arith"
+version = "0.1.0"
+dependencies = [
+ "lorax",
+]
+
+[[package]]
 name = "clap"
 version = "4.5.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -99,6 +106,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
+name = "func"
+version = "0.1.0"
+dependencies = [
+ "lorax",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -142,7 +156,9 @@ dependencies = [
 name = "sillydrageon"
 version = "0.1.0"
 dependencies = [
+ "arith",
  "clap",
+ "func",
  "lorax",
 ]
 
