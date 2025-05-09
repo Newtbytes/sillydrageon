@@ -3,12 +3,11 @@ use clap::Parser;
 use error::CompilerError;
 use parser::ast;
 
-mod asm;
+//mod asm;
 //mod driver;
 mod error;
 mod parser;
 mod src;
-mod tictacil;
 
 fn main() -> () {
     let mut block = lorax::Block {

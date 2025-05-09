@@ -59,17 +59,17 @@ pub type OpResult = Option<Var>;
 pub struct Operation {
     pub name: String,
     // pub operands: Vec<Operand>,
-    pub operands: Value,
-    // pub regions: Vec<Region>,
+    pub operands: Vec<Value>,
+    pub regions: Vec<Region>,
     pub result: OpResult,
 }
 
 impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(var) = self.result {
-            write!(f, "{} := {} {} ", var, self.name, self.operands)
+            write!(f, "{} := {} {:?}", var, self.name, self.operands)
         } else {
-            write!(f, "{} {}", self.name, self.operands)
+            write!(f, "{} {:?}", self.name, self.operands)
         }
     }
 }
@@ -127,6 +127,7 @@ impl Display for Block {
     }
 }
 
+#[derive(Debug)]
 pub struct Region {
     pub blocks: Vec<Block>,
 }
