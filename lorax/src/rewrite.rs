@@ -1,45 +1,59 @@
-struct RuleMatch<T> {
-    node: T,
+pub trait RewriteRule<T> {
+    fn apply(&self, node: &mut T);
 }
 
-pub trait RewriteRule<T> {
-    fn matches(&self, node: &T) -> Option<RuleMatch<T>>;
-    fn rewrite(&self, node: &RuleMatch<T>) -> T;
+/// A collection of rewrite rules, applied in a specific order.
+pub struct RewriteRuleSet<T> {
+    rules: Vec<Box<dyn RewriteRule<T>>>,
+}
 
-    fn apply(&self, node: &T) -> Option<T> {
-        if let Some(matched) = self.matches(&node) {
-            Some(self.rewrite(&matched))
-        } else {
-            None
+impl<T> RewriteRule<T> for RewriteRuleSet<T> {
+    fn apply(&self, node: &mut T) {
+        for rule in &self.rules {
+            rule.apply(node);
         }
     }
 }
 
-// #[macro_export]
-// macro_rules! rewrite_rule {
-//     (@rules $($lhs:pat => $rhs:expr),* $(,)?) => {
-//         match node {
-//             $($lhs => Some(RuleMatch { node: $rhs }),)*
-//             _ => None,
-//         }
-//     }
+impl<T> RewriteRule<Vec<T>> for RewriteRuleSet<T> {
+    fn apply(&self, nodes: &mut Vec<T>) {
+        for node in nodes {
+            self.apply(node);
+        }
+    }
+}
 
-//     ($name:ident<$node:ty> { $($rule:tt)* }) => {
-//         strict $name;
-//         impl RewriteRule<$node> for $name {
-//             fn matches(&self, node: &$node) -> Option<RuleMatch<$node>> {
-//                 match node {
-//                     $($lhs => Some(RuleMatch { node: $rhs }),)*
-//                     _ => None,
-//                 }
-//             }
+pub struct Cursor<T> {
+    nodes: Vec<T>,
+    idx: usize,
+}
 
-//             fn rewrite(&self, node: &RuleMatch<$node>) -> $node {
-//                 match node.node {
-//                     $($lhs => $rhs,)*
-//                     _ => unreachable!(),
-//                 }
-//             }
-//         }
-//     }
-// }
+impl<T> Cursor<T> {
+    pub fn new(nodes: Vec<T>) -> Self {
+        Cursor { nodes, idx: 0 }
+    }
+
+    pub fn get(&self) -> Option<&T> {
+        self.nodes.get(self.idx)
+    }
+
+    pub fn get_mut(&mut self) -> Option<&mut T> {
+        self.nodes.get_mut(self.idx)
+    }
+
+    pub fn push_behind(&mut self, op: T) {
+        self.nodes.insert(self.idx - 1, op);
+    }
+
+    pub fn push_ahead(&mut self, op: T) {
+        self.nodes.insert(self.idx + 1, op);
+    }
+
+    pub fn advance(&mut self) {
+        self.idx += 1;
+    }
+
+    pub fn replace(&mut self, op: T) {
+        *(self.get_mut().unwrap()) = op;
+    }
+}

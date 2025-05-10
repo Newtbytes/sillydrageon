@@ -1,4 +1,8 @@
-use std::{fmt::Display, sync::atomic};
+use std::{
+    cell::{RefCell, RefMut},
+    fmt::Display,
+    sync::atomic,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Var {
@@ -21,12 +25,12 @@ impl Display for Var {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Constant {
     pub val: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Value {
     Var(Var),
     Const(Constant),
@@ -64,16 +68,6 @@ pub struct Operation {
     pub result: OpResult,
 }
 
-impl Display for Operation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(var) = self.result {
-            write!(f, "{} := {} {:?}", var, self.name, self.operands)
-        } else {
-            write!(f, "{} {:?}", self.name, self.operands)
-        }
-    }
-}
-
 impl Operation {
     pub fn get_result(&self) -> Var {
         self.result
@@ -84,6 +78,16 @@ impl Operation {
         self.result
             .as_mut()
             .expect("this should be called on an op with at least one result")
+    }
+}
+
+impl Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(var) = self.result {
+            write!(f, "{} := {} {:?}", var, self.name, self.operands)
+        } else {
+            write!(f, "{} {:?}", self.name, self.operands)
+        }
     }
 }
 
@@ -126,6 +130,12 @@ impl Display for Block {
         Ok(())
     }
 }
+
+// impl From<Block> for Cursor<Operation> {
+//     fn from(block: Block) -> Self {
+//         Self::new(block.operations)
+//     }
+// }
 
 #[derive(Debug)]
 pub struct Region {

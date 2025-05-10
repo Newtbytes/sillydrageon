@@ -8,3 +8,4 @@ clap = { version = "4.0", features = ["derive"] }
 lorax = { path = "lorax" }
 func = { path = "dialects/func" }
 arith = { path = "dialects/arith" }
+x86 = { path = "dialects/x86" }
