@@ -42,9 +42,8 @@ impl<'block, T> Cursor<'block, T> {
     }
 
     pub fn push_behind(&mut self, op: T) {
-        if self.idx > 0 {
-            self.nodes.insert(self.idx - 1, op);
-        }
+        let idx = if self.idx > 0 { self.idx - 1 } else { 0 };
+        self.nodes.insert(idx, op);
     }
 
     pub fn push_ahead(&mut self, op: T) {
