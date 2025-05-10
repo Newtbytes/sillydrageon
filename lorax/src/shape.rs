@@ -1,4 +1,4 @@
-use crate::Cursor;
+use crate::{Cursor, RewriteRule, RewriteRuleSet};
 use std::{
     fmt::Display,
     ops::{Deref, DerefMut},

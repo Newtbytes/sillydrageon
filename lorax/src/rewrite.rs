@@ -1,12 +1,7 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 
 pub trait RewriteRule<T> {
     fn apply(&self, node: &mut T);
-}
-
-/// A collection of rewrite rules, applied in a specific order.
-pub struct RewriteRuleSet<T> {
-    rules: Vec<Box<dyn RewriteRule<T>>>,
 }
 
 impl<T> RewriteRule<T> for RewriteRuleSet<T> {
@@ -26,15 +21,15 @@ impl<T> RewriteRule<Vec<T>> for RewriteRuleSet<T> {
 }
 
 #[derive(Debug)]
-pub struct Cursor<'block, T> {
-    pub(crate) nodes: &'block mut Vec<T>,
+pub struct Cursor<'c, T> {
+    pub(crate) nodes: &'c mut Vec<T>,
     pub(crate) idx: usize,
 }
 
-impl<'block, T> Cursor<'block, T> {
-    pub fn new<C>(nodes: &'block mut C) -> Self
+impl<'c, T> Cursor<'c, T> {
+    pub fn new<B>(nodes: &'c mut B) -> Self
     where
-        C: DerefMut<Target = Vec<T>>,
+        B: DerefMut<Target = Vec<T>>,
     {
         Cursor { nodes, idx: 0 }
     }
@@ -48,28 +43,52 @@ impl<'block, T> Cursor<'block, T> {
     }
 
     pub fn push_behind(&mut self, op: T) {
-        // insert node behind the current idx,
-        // clamping the idx to 0 if needed
-        let idx = if self.idx > 0 { self.idx - 1 } else { 0 };
-
-        self.nodes.insert(idx, op);
-
-        // the node we were pointing to has changed by 1
-        // if nodes is empty, it now has one element
-        if !self.nodes.is_empty() {
-            self.idx += 1;
-        }
+        self.nodes.insert(self.idx, op);
+        // adjust index so we continue to point to the correct node
+        self.advance();
     }
 
     pub fn push_ahead(&mut self, op: T) {
         self.nodes.insert(self.idx + 1, op);
     }
 
+    pub fn pos(&self) -> usize {
+        return self.idx;
+    }
+
     pub fn advance(&mut self) {
-        self.idx += 1;
+        if self.pos() < self.len() {
+            self.idx += 1;
+        }
     }
 
     pub fn replace(&mut self, op: T) {
         *(self.get_mut().unwrap()) = op;
+    }
+
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+}
+
+/// A collection of rewrite rules, applied in a specific order.
+pub struct RewriteRuleSet<T> {
+    rules: Vec<Box<dyn RewriteRule<T>>>,
+}
+
+impl<'c, T> RewriteRuleSet<Cursor<'c, T>> {
+    fn apply<Block>(&self, block: &'c mut Block)
+    where
+        Block: DerefMut<Target = Vec<T>>,
+    {
+        let mut cursor = Cursor::new(block);
+
+        while cursor.pos() < cursor.len() {
+            for rule in &self.rules {
+                rule.apply(&mut cursor);
+            }
+
+            cursor.advance();
+        }
     }
 }
