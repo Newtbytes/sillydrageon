@@ -1,4 +1,4 @@
-use lorax::{Cursor, Operation, Value, Var};
+use lorax::{Block, Cursor, Operation, Value, Var};
 
 use crate::ops::*;
 

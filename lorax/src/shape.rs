@@ -1,5 +1,9 @@
 use crate::Cursor;
-use std::{fmt::Display, sync::atomic};
+use std::{
+    fmt::Display,
+    ops::{Deref, DerefMut},
+    sync::atomic,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Var {
@@ -146,10 +150,24 @@ impl Display for Block {
     }
 }
 
+impl Deref for Block {
+    type Target = Vec<Operation>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.operations
+    }
+}
+
+impl DerefMut for Block {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.operations
+    }
+}
+
 impl<'block> From<&'block mut Block> for Cursor<'block, Operation> {
     fn from(block: &'block mut Block) -> Self {
         Cursor {
-            nodes: block.operations.as_mut(),
+            nodes: block,
             idx: 0,
         }
     }
