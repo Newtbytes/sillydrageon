@@ -1,8 +1,4 @@
-use std::{
-    cell::{RefCell, RefMut},
-    fmt::Display,
-    sync::atomic,
-};
+use std::{fmt::Display, sync::atomic};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Var {
@@ -81,13 +77,31 @@ impl Operation {
     }
 }
 
+fn fmt_delimited_list<I>(list: &mut I, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+where
+    I: Iterator,
+    I::Item: Display,
+{
+    if let Some(item) = list.next() {
+        write!(f, "{}", item)?;
+    }
+
+    for item in list {
+        write!(f, ", {}", item)?;
+    }
+
+    Ok(())
+}
+
 impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(var) = self.result {
-            write!(f, "{} := {} {:?}", var, self.name, self.operands)
+            write!(f, "{} := {} ", var, self.name)?;
         } else {
-            write!(f, "{} {:?}", self.name, self.operands)
+            write!(f, "{} ", self.name)?;
         }
+
+        fmt_delimited_list(&mut self.operands.iter(), f)
     }
 }
 
@@ -130,12 +144,6 @@ impl Display for Block {
         Ok(())
     }
 }
-
-// impl From<Block> for Cursor<Operation> {
-//     fn from(block: Block) -> Self {
-//         Self::new(block.operations)
-//     }
-// }
 
 #[derive(Debug)]
 pub struct Region {

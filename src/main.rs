@@ -24,6 +24,7 @@ fn main() -> () {
 
     let _ = parser::lower_stmt(&mut block, &stmt);
     println!("{}", block);
+
     // match driver::run_compiler(driver::Cli::parse()) {
     //     Err(e) => Err(e),
     //     _ => Ok(()),
