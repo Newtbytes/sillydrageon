@@ -2,7 +2,7 @@ use lorax::{Operation, Value, Var};
 
 pub fn negate<V: Into<Value>>(val: V) -> Operation {
     Operation {
-        name: "neg".to_owned(),
+        name: "arith.neg".to_owned(),
         operands: vec![val.into()],
         regions: Vec::new(),
         result: Some(Var::new()),
