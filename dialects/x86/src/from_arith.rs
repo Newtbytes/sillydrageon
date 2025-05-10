@@ -6,7 +6,7 @@ fn binop_pat(op: &Operation) -> (&str, &[Value], Option<Var>) {
     (op.name.as_ref(), &op.operands[..], op.result)
 }
 
-fn lower_binop(cursor: &mut Cursor<Operation>) {
+pub fn lower_binop(cursor: &mut Cursor<Operation>) {
     let op = cursor.get().unwrap();
 
     match binop_pat(op) {

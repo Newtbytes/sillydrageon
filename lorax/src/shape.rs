@@ -1,3 +1,4 @@
+use crate::Cursor;
 use std::{fmt::Display, sync::atomic};
 
 #[derive(Debug, Clone, Copy)]
@@ -142,6 +143,15 @@ impl Display for Block {
             writeln!(f, "{}", operation)?;
         }
         Ok(())
+    }
+}
+
+impl<'block> From<&'block mut Block> for Cursor<'block, Operation> {
+    fn from(block: &'block mut Block) -> Self {
+        Cursor {
+            nodes: block.operations.as_mut(),
+            idx: 0,
+        }
     }
 }
 

@@ -23,13 +23,13 @@ impl<T> RewriteRule<Vec<T>> for RewriteRuleSet<T> {
     }
 }
 
-pub struct Cursor<T> {
-    nodes: Vec<T>,
-    idx: usize,
+pub struct Cursor<'block, T> {
+    pub(crate) nodes: &'block mut Vec<T>,
+    pub(crate) idx: usize,
 }
 
-impl<T> Cursor<T> {
-    pub fn new(nodes: Vec<T>) -> Self {
+impl<'block, T> Cursor<'block, T> {
+    pub fn new(nodes: &'block mut Vec<T>) -> Self {
         Cursor { nodes, idx: 0 }
     }
 

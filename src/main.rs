@@ -1,6 +1,7 @@
 use clap::Parser;
 
 use error::CompilerError;
+use lorax::{Block, Operation};
 use parser::ast;
 
 //mod asm;
@@ -22,7 +23,10 @@ fn main() -> () {
         )),
     ));
 
-    let _ = parser::lower_stmt(&mut block, &stmt);
+    parser::lower_stmt(&mut block, &stmt);
+    let mut cursor: lorax::Cursor<Operation> = (&mut block).into();
+    x86::lower_binop(&mut cursor);
+
     println!("{}", block);
 
     // match driver::run_compiler(driver::Cli::parse()) {
