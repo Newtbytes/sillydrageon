@@ -61,7 +61,7 @@ impl Scanner<'_> {
         self.offset += self.consumed.len();
         self.consumed.clear();
     }
-    
+
     fn one_ahead(&mut self) -> Option<&char> {
         self.src.peek()
     }
@@ -93,7 +93,6 @@ impl Scanner<'_> {
         self.eat_while(char::is_ascii_digit);
     }
 }
-
 
 fn is_word(c: &char) -> bool {
     matches!(c, '0'..='9' | 'a'..='z' | 'A'..='Z' | '_')
@@ -141,8 +140,7 @@ impl Iterator for Scanner<'_> {
 
                     if self.at_word_bound() {
                         Constant
-                    }
-                    else {
+                    } else {
                         Error("Invalid constant")
                     }
                 }
