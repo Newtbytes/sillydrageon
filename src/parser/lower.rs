@@ -4,8 +4,10 @@ use lorax::{Block, Constant, Value};
 
 use super::ast;
 
-use arith;
-use func::{func, ret};
+use dialect::{
+    arith,
+    func::{func, ret},
+};
 
 fn lower_expr(block: &mut Block, expr: &ast::Expr) -> Value {
     let op = match expr {

@@ -7,11 +7,11 @@ use std::process::Command;
 
 use crate::error::CompilerError;
 use crate::parser;
+use dialect::x86;
 use lorax;
 use lorax::Operation;
 use lorax::RewriteRule;
 use lorax::RewriteRuleSet;
-use x86;
 
 const CC: &str = "gcc";
 

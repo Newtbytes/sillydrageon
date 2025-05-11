@@ -1,6 +1,6 @@
 use lorax::{Block, Cursor, Operation, Value, Var};
 
-use crate::ops::*;
+use super::ops::*;
 
 fn binop_pat(op: &Operation) -> (&str, &[Value], Option<Var>) {
     (op.name.as_ref(), &op.operands[..], op.result)
