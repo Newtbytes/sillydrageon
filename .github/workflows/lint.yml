@@ -1,0 +1,19 @@
+on: push
+name: Clippy check
+
+env:
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Clippy
+        run: cargo clippy --fix --all-targets --all-features
+
+      # Commit all changed files back to the repository
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update formatting with rustfmt
