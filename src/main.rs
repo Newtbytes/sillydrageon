@@ -1,13 +1,12 @@
 use clap::Parser;
 
 use error::CompilerError;
+use lorax::{Block, Operation};
 
-mod asm;
 mod driver;
 mod error;
 mod parser;
 mod src;
-mod tictacil;
 
 fn main() -> Result<(), CompilerError> {
     match driver::run_compiler(driver::Cli::parse()) {
