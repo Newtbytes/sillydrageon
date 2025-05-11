@@ -1,7 +1,6 @@
 use clap::Parser;
 
 use error::CompilerError;
-use lorax::{Block, Operation};
 
 mod driver;
 mod error;

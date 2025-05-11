@@ -23,10 +23,10 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 
     fn peek(&mut self) -> ParseResult<&Token> {
-        return self
+        self
             .tokens
             .peek()
-            .ok_or("Unexpectedly reach end of file".to_owned());
+            .ok_or("Unexpectedly reach end of file".to_owned())
     }
 
     fn expect(&mut self, expected: TokenKind) -> ParseResult<Token> {
