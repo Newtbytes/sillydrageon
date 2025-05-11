@@ -20,6 +20,12 @@ impl<T> RewriteRule<Vec<T>> for RewriteRuleSet<T> {
     }
 }
 
+impl<T> RewriteRule<T> for fn(&mut T) {
+    fn apply(&self, node: &mut T) {
+        self(node)
+    }
+}
+
 #[derive(Debug)]
 pub struct Cursor<'c, T> {
     pub(crate) nodes: &'c mut Vec<T>,
@@ -76,12 +82,20 @@ pub struct RewriteRuleSet<T> {
     rules: Vec<Box<dyn RewriteRule<T>>>,
 }
 
+impl<T> RewriteRuleSet<T> {
+    pub fn new(rules: Vec<Box<dyn RewriteRule<T>>>) -> Self {
+        Self { rules }
+    }
+}
+
 impl<'c, T> RewriteRuleSet<Cursor<'c, T>> {
-    fn apply<Block>(&self, block: &'c mut Block)
+    pub fn apply<'b, Block>(&self, block: &'b mut Block)
     where
         Block: DerefMut<Target = Vec<T>>,
+        'b: 'c,
+        T: 'b,
     {
-        let mut cursor = Cursor::new(block);
+        let mut cursor = Cursor::<'b, T>::new(block);
 
         while cursor.pos() < cursor.len() {
             for rule in &self.rules {

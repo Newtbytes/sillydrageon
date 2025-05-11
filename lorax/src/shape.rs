@@ -65,7 +65,7 @@ pub struct Operation {
     pub name: String,
     // pub operands: Vec<Operand>,
     pub operands: Vec<Value>,
-    pub regions: Vec<Region>,
+    pub blocks: Vec<Block>,
     pub result: OpResult,
 }
 
@@ -106,30 +106,63 @@ impl Display for Operation {
             write!(f, "{} ", self.name)?;
         }
 
-        fmt_delimited_list(&mut self.operands.iter(), f)
+        fmt_delimited_list(&mut self.operands.iter(), f)?;
+
+        if !self.blocks.is_empty() {
+            write!(f, "\n")?;
+        }
+
+        for block in &self.blocks {
+            write!(f, "{}", block)?;
+        }
+
+        Ok(())
     }
 }
 
 #[derive(Debug)]
 pub struct Block {
+    id: usize,
     pub operations: Vec<Operation>,
 }
 
 impl From<Vec<Operation>> for Block {
     fn from(ops: Vec<Operation>) -> Self {
-        Self { operations: ops }
+        Self {
+            id: Self::unique_id(),
+            operations: ops,
+        }
     }
 }
 
 impl Block {
+    fn unique_id() -> usize {
+        static BLOCK_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
+        BLOCK_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
+    }
+
     pub fn new() -> Self {
         Self {
+            id: Self::unique_id(),
             operations: Vec::new(),
         }
     }
 
     pub fn ops(&self) -> impl Iterator<Item = &Operation> {
         self.operations.iter()
+    }
+
+    /// Iterate through all of the sub-blocks
+    /// contained in the operations in this block.
+    pub fn blocks(&self) -> impl Iterator<Item = &Block> {
+        self.operations.iter().map(|op| op.blocks.iter()).flatten()
+    }
+
+    pub fn blocks_mut(&mut self) -> impl Iterator<Item = &mut Block> {
+        self.operations
+            .iter_mut()
+            .map(|op| op.blocks.iter_mut())
+            .flatten()
     }
 
     pub fn push(&mut self, op: Operation) -> &Operation {
@@ -143,8 +176,9 @@ impl Block {
 
 impl Display for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, ".bb{}:", self.id)?;
         for operation in &self.operations {
-            writeln!(f, "{}", operation)?;
+            writeln!(f, "    {}", operation)?;
         }
         Ok(())
     }
@@ -170,24 +204,5 @@ impl<'block> From<&'block mut Block> for Cursor<'block, Operation> {
             nodes: block,
             idx: 0,
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct Region {
-    pub blocks: Vec<Block>,
-}
-
-impl Region {
-    pub fn new() -> Self {
-        Self { blocks: Vec::new() }
-    }
-
-    pub fn ops(&self) -> impl Iterator<Item = &Operation> {
-        self.blocks.iter().map(Block::ops).flatten()
-    }
-
-    pub fn push(&mut self, block: Block) {
-        self.blocks.push(block);
     }
 }

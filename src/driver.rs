@@ -5,9 +5,13 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::asm;
 use crate::error::CompilerError;
 use crate::parser;
+use lorax;
+use lorax::Operation;
+use lorax::RewriteRule;
+use lorax::RewriteRuleSet;
+use x86;
 
 const CC: &str = "gcc";
 
@@ -150,6 +154,9 @@ pub struct Cli {
     parse: bool,
 
     #[arg(long, action = clap::ArgAction::SetTrue)]
+    tacky: bool,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
     codegen: bool,
 }
 
@@ -179,16 +186,41 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         return Ok(());
     }
 
-    // codegen
-    let asm = asm::lower_ast(&ast);
-    let asm = asm::emit(&asm);
-    if cli.codegen {
-        println!("{}", asm);
+    // 'tacky' is the option to generate IR
+    let mut ir = parser::lower_program(&ast);
+    if cli.tacky {
+        println!("{}", ir);
         return Ok(());
     }
 
-    asm_file.write(asm)?;
-    assemble(asm_file)?;
+    // codegen
 
-    Ok(())
+    // TODO: put this somewhere else
+    struct LowerBinopRule;
+
+    impl RewriteRule<lorax::Cursor<'_, Operation>> for LowerBinopRule {
+        fn apply(&self, cursor: &mut lorax::Cursor<Operation>) {
+            x86::lower_binop(cursor);
+        }
+    }
+
+    let ruleset = RewriteRuleSet::new(vec![Box::new(LowerBinopRule)]);
+    for block in ir.blocks_mut() {
+        ruleset.apply(block);
+    }
+    drop(ruleset);
+
+    println!("{}", ir);
+
+    if cli.codegen {
+        println!("{}", ir);
+        return Ok(());
+    }
+
+    todo!()
+
+    // asm_file.write(asm)?;
+    // assemble(asm_file)?;
+
+    // Ok(())
 }
