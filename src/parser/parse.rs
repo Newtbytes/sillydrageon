@@ -23,8 +23,7 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 
     fn peek(&mut self) -> ParseResult<&Token> {
-        self
-            .tokens
+        self.tokens
             .peek()
             .ok_or("Unexpectedly reach end of file".to_owned())
     }
