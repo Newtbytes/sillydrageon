@@ -80,8 +80,13 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     }
 }
 
-pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> {
+pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Option<Program>> {
     let mut tokens = tokens.peekable();
+
+    if tokens.peek().is_none() {
+        return Ok(None);
+    }
+
     let mut parser = Parser {
         tokens: &mut tokens,
     };
@@ -94,5 +99,5 @@ pub fn parse<T: Iterator<Item = Token>>(tokens: &mut T) -> ParseResult<Program> 
         ));
     }
 
-    Ok(prg)
+    Ok(Some(prg))
 }

@@ -143,7 +143,7 @@ pub fn tokenize(src: &str) -> Result<Vec<parser::Token>, CompilerError> {
     parser::tokenize(src)
 }
 
-pub fn parser(tokens: Vec<parser::Token>) -> Result<parser::Program, CompilerError> {
+pub fn parser(tokens: Vec<parser::Token>) -> Result<Option<parser::Program>, CompilerError> {
     parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)
 }
 
@@ -189,6 +189,11 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         dbg!(ast);
         return Ok(());
     }
+
+    let ast = match ast {
+        Some(x) => x,
+        None => return Ok(()),
+    };
 
     // codegen
     let asm = codegen(ast);
