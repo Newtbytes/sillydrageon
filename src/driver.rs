@@ -140,16 +140,16 @@ pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
 }
 
 pub fn tokenize(src: &str) -> Result<Vec<parser::Token>, CompilerError> {
-    Ok(parser::tokenize(&src)?)
+    parser::tokenize(src)
 }
 
 pub fn parser(tokens: Vec<parser::Token>) -> Result<parser::Program, CompilerError> {
-    Ok(parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)?)
+    parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)
 }
 
 pub fn codegen(ast: parser::Program) -> String {
     let asm = codegen::lower(&ast);
-    return codegen::emit(&asm);
+    codegen::emit(&asm)
 }
 
 #[derive(clap::Parser)]
