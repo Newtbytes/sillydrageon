@@ -5,7 +5,7 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  clippy_check:
+  rustfmt:
     runs-on: ubuntu-latest
     permissions:
       contents: write
