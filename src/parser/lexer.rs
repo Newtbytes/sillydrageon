@@ -85,7 +85,7 @@ impl Scanner<'_> {
         tok
     }
 
-    fn eat_identifer(&mut self) {
+    fn eat_identifier(&mut self) {
         self.eat_while(is_word);
     }
 
@@ -119,7 +119,7 @@ impl Iterator for Scanner<'_> {
                 ';' => Semicolon,
 
                 'a'..='z' | 'A'..='Z' | '_' => {
-                    self.eat_identifer();
+                    self.eat_identifier();
 
                     match self.at_word_bound() {
                         // handle keywords
