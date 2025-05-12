@@ -41,15 +41,6 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
         Ok(Stmt::Return(return_val?))
     }
 
-    fn parse_unaryop(&mut self) -> ParseResult<UnaryOp> {
-        match self.take()?.kind {
-            TokenKind::Complement => todo!(),
-            TokenKind::Negate => todo!(),
-            TokenKind::Error(msg) => Err(msg.to_owned()),
-            _ => Err("".to_owned()),
-        }
-    }
-
     fn parse_expr(&mut self) -> ParseResult<Expr> {
         let expr = match self.peek()?.kind {
             TokenKind::Constant => {
