@@ -14,17 +14,17 @@ struct Parser<'a, I: Iterator<Item = Token>> {
 
 impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
     fn take(&mut self) -> ParseResult<Token> {
-        return self
+        self
             .tokens
             .next()
-            .ok_or("Unexpectedly reach end of file".to_owned());
+            .ok_or("Unexpectedly reach end of file".to_owned())
     }
 
     fn peek(&mut self) -> ParseResult<&Token> {
-        return self
+        self
             .tokens
             .peek()
-            .ok_or("Unexpectedly reach end of file".to_owned());
+            .ok_or("Unexpectedly reach end of file".to_owned())
     }
 
     fn expect(&mut self, expected: TokenKind) -> ParseResult<Token> {
