@@ -1,12 +1,6 @@
 use clap::Parser;
 
-use error::CompilerError;
-
-mod codegen;
-mod driver;
-mod error;
-mod parser;
-mod src;
+use sillydrageon::{driver, error::CompilerError};
 
 fn main() -> Result<(), CompilerError> {
     match driver::run_compiler(driver::Cli::parse()) {
