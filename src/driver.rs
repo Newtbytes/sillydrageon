@@ -8,7 +8,7 @@ use std::process::Command;
 use crate::error::CompilerError;
 use crate::parser;
 use dialect::x86;
-use lorax::{RewriteRule, RewritingCtx, rewrite_block};
+use lorax::rewrite_block;
 
 const CC: &str = "gcc";
 
