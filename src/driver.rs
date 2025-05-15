@@ -8,7 +8,7 @@ use std::process::Command;
 use crate::error::CompilerError;
 use crate::parser;
 use dialect::x86;
-use lorax::rewrite_block;
+use lorax::rewrite_blocks;
 
 const CC: &str = "gcc";
 
@@ -184,7 +184,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     // 'tacky' is the option to generate IR
-    let ir = &mut parser::lower_program(&ast);
+    let mut ir = &mut parser::lower_program(&ast);
     if cli.tacky {
         println!("{}", ir);
         return Ok(());
@@ -194,7 +194,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
 
     // TODO: put this somewhere else
 
-    let ir = rewrite_block(ir, &x86::rules());
+    rewrite_blocks(&mut ir, x86::rules());
 
     println!("{}", ir);
 

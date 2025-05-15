@@ -4,6 +4,6 @@ pub fn func(block: Block) -> Operation {
     OpBuilder::new("func.fn").add_block(block).build()
 }
 
-pub fn ret<'op>(val: Value) -> Operation<'op> {
+pub fn ret<'op>(val: Value) -> Operation {
     OpBuilder::new("func.ret").add_operand(val).build()
 }

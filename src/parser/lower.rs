@@ -31,11 +31,11 @@ pub fn lower_stmt(block: &mut Block, stmt: &ast::Stmt) {
 }
 
 pub fn lower_program(program: &ast::Program) -> Block {
-    let mut region = Block::new(Pool::new());
+    let mut region = Block::new();
 
     match &program.body {
         ast::Decl::Function(_, stmt) => {
-            let mut block = Block::new(Pool::new());
+            let mut block = Block::new();
 
             lower_stmt(&mut block, stmt);
             region.push(func(block));

@@ -1,10 +1,9 @@
 mod ir;
-mod link;
-mod lower;
 mod pool;
 mod rewrite;
+mod transform;
 
-pub use ir::{Block, Constant, OpBuilder, OpResult, Operation, Value, Var};
-pub use lower::{RewritingCtx, rewrite_block};
+pub use ir::{Block, Constant, OpBuilder, OpResult, Operation, Value, Var, walk_blocks};
 pub use pool::{Pool, Ptr};
 pub use rewrite::{RewriteRule, RewriteRuleSet};
+pub use transform::{RewritingCtx, rewrite_blocks};

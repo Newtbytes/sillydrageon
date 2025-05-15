@@ -1,6 +1,4 @@
-use std::{fmt::Display, marker::PhantomData, sync::atomic};
-
-use crate::pool::{Pool, Ptr};
+use std::{fmt::Display, sync::atomic};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Var {
@@ -58,15 +56,15 @@ impl Display for Value {
 pub type OpResult = Option<Var>;
 
 #[derive(Debug)]
-pub struct Operation<'op> {
+pub struct Operation {
     pub name: String,
     // pub operands: Vec<Operand>,
     pub operands: Vec<Value>,
-    pub blocks: Vec<Block<'op>>,
+    pub blocks: Vec<Block>,
     pub result: OpResult,
 }
 
-impl<'op> Operation<'op> {
+impl Operation {
     pub fn get_result(&self) -> Var {
         self.result
             .expect("this should be called on an op with at least one result")
@@ -76,6 +74,10 @@ impl<'op> Operation<'op> {
         self.result
             .as_mut()
             .expect("this should be called on an op with at least one result")
+    }
+
+    pub fn walk_blocks(&mut self) -> impl Iterator<Item = &mut Block> {
+        self.blocks.iter_mut()
     }
 }
 
@@ -95,7 +97,7 @@ where
     Ok(())
 }
 
-impl Display for Operation<'_> {
+impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(var) = self.result {
             write!(f, "{} := {} ", var, self.name)?;
@@ -117,8 +119,8 @@ impl Display for Operation<'_> {
     }
 }
 
-pub struct OpBuilder<'op>(Operation<'op>);
-impl<'op> OpBuilder<'op> {
+pub struct OpBuilder(Operation);
+impl OpBuilder {
     pub fn new(name: &str) -> Self {
         OpBuilder(Operation {
             name: name.to_owned(),
@@ -133,7 +135,7 @@ impl<'op> OpBuilder<'op> {
         self
     }
 
-    pub fn add_block(mut self, block: Block<'op>) -> Self {
+    pub fn add_block(mut self, block: Block) -> Self {
         self.0.blocks.push(block);
         self
     }
@@ -143,50 +145,53 @@ impl<'op> OpBuilder<'op> {
         self
     }
 
-    pub fn build(self) -> Operation<'op> {
+    pub fn build(self) -> Operation {
         self.0
     }
 }
 
 #[derive(Debug)]
-pub struct Block<'pool>
-where
-    Self: 'pool,
-{
+pub struct Block {
     pub(crate) id: usize,
-    pub pool: Pool<Operation<'pool>>,
-    pub body: Vec<Ptr>,
-    phantom: PhantomData<&'pool ()>,
+    pub body: Vec<Operation>,
 }
 
-impl<'pool> Block<'pool> {
+impl Block {
     pub(crate) fn unique_id() -> usize {
         static BLOCK_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
         BLOCK_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
     }
 
-    pub fn new(pool: Pool<Operation<'pool>>) -> Self {
+    pub fn new() -> Self {
         Self {
             id: Self::unique_id(),
-            pool: pool,
             body: Vec::new(),
-            phantom: PhantomData,
         }
     }
 
-    pub fn ops(&self) -> impl Iterator<Item = &Ptr> {
-        self.body.iter()
+    pub fn get(&self, idx: usize) -> &Operation {
+        self.body
+            .get(idx)
+            .expect("idx should always point to an existing operation")
     }
 
-    pub fn push(&mut self, op: Operation<'pool>) -> &Operation<'pool> {
-        let ptr = self.pool.alloc(op);
-        self.body.push(ptr);
-        self.pool.get(&ptr)
+    pub fn get_mut(&mut self, idx: usize) -> &mut Operation {
+        self.body
+            .get_mut(idx)
+            .expect("idx should always point to an existing operation")
     }
 
-    pub fn insert(&mut self, idx: usize, op: Operation<'pool>) {
-        let ptr = self.pool.alloc(op);
-        self.body.insert(idx, ptr);
+    pub fn walk_ops(&mut self) -> impl Iterator<Item = &mut Operation> {
+        self.body.iter_mut()
+    }
+
+    pub fn push(&mut self, op: Operation) -> &Operation {
+        self.body.push(op);
+        self.body.last().expect("last op should always exist")
+    }
+
+    pub fn insert(&mut self, idx: usize, op: Operation) {
+        self.body.insert(idx, op);
     }
 
     pub fn len(&self) -> usize {
@@ -194,12 +199,23 @@ impl<'pool> Block<'pool> {
     }
 }
 
-impl Display for Block<'_> {
+impl Display for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, ".bb{}:", self.id)?;
-        for ptr in &self.body {
-            writeln!(f, "    {}", self.pool.get(ptr))?;
+        for op in &self.body {
+            writeln!(f, "    {}", op)?;
         }
         Ok(())
     }
+}
+
+// this is incorect, but for now it will do
+pub fn walk_blocks<'a>(block: &'a mut Block) -> Box<dyn Iterator<Item = &'a mut Block> + 'a> {
+    let mut blocks = Vec::new();
+
+    for op in block.walk_ops() {
+        blocks.extend(op.walk_blocks());
+    }
+
+    Box::new(blocks.into_iter())
 }
