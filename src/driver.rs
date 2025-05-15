@@ -8,9 +8,7 @@ use std::process::Command;
 use crate::error::CompilerError;
 use crate::parser;
 use dialect::x86;
-use lorax::Operation;
-use lorax::RewriteRule;
-use lorax::RewriteRuleSet;
+use lorax::{RewriteRule, RewritingCtx, rewrite_block};
 
 const CC: &str = "gcc";
 
@@ -186,7 +184,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     // 'tacky' is the option to generate IR
-    let mut ir = parser::lower_program(&ast);
+    let ir = &mut parser::lower_program(&ast);
     if cli.tacky {
         println!("{}", ir);
         return Ok(());
@@ -195,19 +193,8 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     // codegen
 
     // TODO: put this somewhere else
-    struct LowerBinopRule;
 
-    impl RewriteRule<lorax::Cursor<'_, Operation>> for LowerBinopRule {
-        fn apply(&self, cursor: &mut lorax::Cursor<Operation>) {
-            x86::lower_binop(cursor);
-        }
-    }
-
-    let ruleset = RewriteRuleSet::new(vec![Box::new(LowerBinopRule)]);
-    for block in ir.blocks_mut() {
-        ruleset.apply(block);
-    }
-    drop(ruleset);
+    let ir = rewrite_block(ir, &x86::rules());
 
     println!("{}", ir);
 

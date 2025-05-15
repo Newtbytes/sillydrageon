@@ -1,25 +1,25 @@
-use lorax::{Block, Cursor, Operation, Value, Var};
+use lorax::{RewriteRule, RewriteRuleSet, RewritingCtx};
 
 use super::ops::*;
 
-fn binop_pat(op: &Operation) -> (&str, &[Value], Option<Var>) {
-    (op.name.as_ref(), &op.operands[..], op.result)
+pub struct LowerBinop;
+impl<'block> RewriteRule<RewritingCtx<'block>> for LowerBinop {
+    fn apply(&self, ctx: &mut RewritingCtx<'block>) {
+        match (ctx.name(), ctx.operands(), ctx.result()) {
+            (name, &[src], &Some(dst)) => {
+                ctx.replace(match name {
+                    "arith.neg" => neg(dst.clone()),
+                    "arith.complement" => todo!("complement"),
+                    _ => unreachable!("unexpected name: {}", name),
+                });
+
+                ctx.insert_behind(mov(src.clone(), dst.clone()));
+            }
+            _ => (),
+        }
+    }
 }
 
-pub fn lower_binop(cursor: &mut Cursor<Operation>) {
-    let op = cursor.get().unwrap();
-
-    match binop_pat(op) {
-        (name, [src], Some(dst)) => {
-            let new_op = match name {
-                "arith.neg" => neg(dst),
-                "arith.complement" => todo!(),
-                _ => return (),
-            };
-
-            cursor.push_behind(mov(*src, dst));
-            cursor.replace(new_op);
-        }
-        _ => (),
-    }
+pub fn rules<'ctx>() -> RewriteRuleSet<RewritingCtx<'ctx>> {
+    RewriteRuleSet::new().add_rule(LowerBinop)
 }

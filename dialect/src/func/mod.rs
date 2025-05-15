@@ -1,19 +1,9 @@
-use lorax::{Block, Operation, Value};
+use lorax::{Block, OpBuilder, Operation, Value};
 
 pub fn func(block: Block) -> Operation {
-    Operation {
-        name: "fn".to_owned(),
-        operands: Vec::new(),
-        blocks: vec![block],
-        result: None,
-    }
+    OpBuilder::new("func.fn").add_block(block).build()
 }
 
-pub fn ret<V: Into<Value>>(val: V) -> Operation {
-    Operation {
-        name: "ret".to_owned(),
-        operands: vec![val.into()],
-        blocks: Vec::new(),
-        result: None,
-    }
+pub fn ret<'op>(val: Value) -> Operation<'op> {
+    OpBuilder::new("func.ret").add_operand(val).build()
 }

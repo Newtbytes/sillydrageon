@@ -1,6 +1,6 @@
 // Lower AST to IR
 
-use lorax::{Block, Constant, Value};
+use lorax::{Block, Constant, Pool, Value};
 
 use super::ast;
 
@@ -31,11 +31,11 @@ pub fn lower_stmt(block: &mut Block, stmt: &ast::Stmt) {
 }
 
 pub fn lower_program(program: &ast::Program) -> Block {
-    let mut region = Block::new();
+    let mut region = Block::new(Pool::new());
 
     match &program.body {
         ast::Decl::Function(_, stmt) => {
-            let mut block = Block::new();
+            let mut block = Block::new(Pool::new());
 
             lower_stmt(&mut block, stmt);
             region.push(func(block));

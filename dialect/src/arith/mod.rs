@@ -1,10 +1,8 @@
-use lorax::{Operation, Value, Var};
+use lorax::{OpBuilder, Operation, Value, Var};
 
-pub fn negate<V: Into<Value>>(val: V) -> Operation {
-    Operation {
-        name: "arith.neg".to_owned(),
-        operands: vec![val.into()],
-        blocks: Vec::new(),
-        result: Some(Var::new()),
-    }
+pub fn negate<'op>(val: Value) -> Operation<'op> {
+    OpBuilder::new("arith.neg")
+        .add_operand(val)
+        .add_result(Var::new())
+        .build()
 }
