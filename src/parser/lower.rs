@@ -1,6 +1,6 @@
 // Lower AST to IR
 
-use lorax::{Block, Constant, Pool, Value};
+use lorax::{Block, Constant, Value};
 
 use super::ast;
 

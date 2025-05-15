@@ -184,7 +184,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     // 'tacky' is the option to generate IR
-    let mut ir = &mut parser::lower_program(&ast);
+    let ir = &mut parser::lower_program(&ast);
     if cli.tacky {
         println!("{}", ir);
         return Ok(());
@@ -194,7 +194,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
 
     // TODO: put this somewhere else
 
-    rewrite_blocks(&mut ir, x86::rules());
+    rewrite_blocks(ir, x86::rules());
 
     println!("{}", ir);
 
