@@ -9,5 +9,9 @@ def_op! {
 }
 
 def_op! {
-    x86.cmpl(src: Value) -> None
+    x86.not(src: Value) -> None
+}
+
+def_op! {
+    x86.ret() -> None
 }

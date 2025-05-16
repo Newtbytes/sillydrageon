@@ -1,4 +1,4 @@
-use lorax::{RewriteRule, RewriteRuleSet, RewritingCtx};
+use lorax::{RewriteRule, RewritingCtx};
 
 use super::ops::*;
 
@@ -18,8 +18,4 @@ impl<'block> RewriteRule<RewritingCtx<'block>> for LowerBinop {
             _ => (),
         }
     }
-}
-
-pub fn rules<'ctx>() -> RewriteRuleSet<RewritingCtx<'ctx>> {
-    RewriteRuleSet::new().add_rule(LowerBinop)
 }

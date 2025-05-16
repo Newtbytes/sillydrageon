@@ -45,6 +45,10 @@ impl<'a> RewritingCtx<'a> {
         &self.get().name
     }
 
+    pub fn prev(&self) -> Option<&Operation> {
+        self.block.body.get(self.op_idx - 1)
+    }
+
     pub fn result(&self) -> &Option<Value> {
         &self.get().result
     }
