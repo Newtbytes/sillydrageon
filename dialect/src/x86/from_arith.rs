@@ -9,7 +9,7 @@ impl<'block> RewriteRule<RewritingCtx<'block>> for LowerBinop {
             (name, &[src], &Some(dst)) => {
                 ctx.replace(match name {
                     "arith.negate" => neg(dst.into()),
-                    "arith.complement" => todo!("complement"),
+                    "arith.complement" => not(dst.into()),
                     _ => return (),
                 });
 

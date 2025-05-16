@@ -5,11 +5,11 @@ def_op! {
 }
 
 def_op! {
-    x86.neg(src: Value) -> None
+    x86.neg(src: Value) -> src
 }
 
 def_op! {
-    x86.not(src: Value) -> None
+    x86.not(src: Value) -> src
 }
 
 def_op! {
