@@ -42,7 +42,7 @@ impl<'a> RewritingCtx<'a> {
     }
 
     pub fn name(&self) -> &str {
-        &self.get().name.as_str()
+        &self.get().name
     }
 
     pub fn result(&self) -> &Option<Var> {

@@ -1,9 +1,9 @@
-use lorax::{Block, OpBuilder, Operation, Value};
+use lorax::{Block, Operation, Value, def_op};
 
-pub fn func(block: Block) -> Operation {
-    OpBuilder::new("func.fn").add_block(block).build()
+def_op! {
+    func.func(block: Block)
 }
 
-pub fn ret<'op>(val: Value) -> Operation {
-    OpBuilder::new("func.ret").add_operand(val).build()
+def_op! {
+    func.ret(val: Value) -> None
 }

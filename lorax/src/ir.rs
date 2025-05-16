@@ -57,14 +57,17 @@ pub type OpResult = Option<Var>;
 
 #[derive(Debug)]
 pub struct Operation {
-    pub name: String,
-    // pub operands: Vec<Operand>,
+    pub name: &'static str,
     pub operands: Vec<Value>,
     pub blocks: Vec<Block>,
     pub result: OpResult,
 }
 
 impl Operation {
+    pub fn push_block(&mut self, block: Block) {
+        self.blocks.push(block);
+    }
+
     pub fn get_result(&self) -> Var {
         self.result
             .expect("this should be called on an op with at least one result")
@@ -79,6 +82,39 @@ impl Operation {
     pub fn walk_blocks(&mut self) -> impl Iterator<Item = &mut Block> {
         self.blocks.iter_mut()
     }
+}
+
+#[macro_export]
+macro_rules! def_op {
+    // Block-only operation (no operands, no result)
+    ($dl:ident . $name:ident ($field:ident : Block)) => {
+        pub fn $name($field: Block) -> Operation {
+            Operation {
+                name: stringify!($dl . $name),
+                operands: Vec::new(),
+                blocks: vec![$field],
+                result: None,
+            }
+        }
+    };
+
+    // Operation with operands, optional result
+    ($dl:ident . $name:ident ( $($field:ident : $ty:ty),* $(,)? ) $(-> $ret:ident)? ) => {
+        pub fn $name($($field: $ty),*) -> Operation {
+            Operation {
+                name: stringify!($dl . $name),
+                operands: vec![$($field.into()),*],
+                blocks: Vec::new(),
+                result: def_op!(@ret $( $ret )?),
+            }
+        }
+    };
+
+    // Result handling
+    (@ret) => { Some(Var::new()) };
+    (@ret None) => { None };
+    (@ret Var) => { Some(Var::new()) };
+    (@ret $ret:ident) => { Some(($ret).into()) };
 }
 
 fn fmt_delimited_list<I>(list: &mut I, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
@@ -116,37 +152,6 @@ impl Display for Operation {
         }
 
         Ok(())
-    }
-}
-
-pub struct OpBuilder(Operation);
-impl OpBuilder {
-    pub fn new(name: &str) -> Self {
-        OpBuilder(Operation {
-            name: name.to_owned(),
-            operands: Vec::new(),
-            blocks: Vec::new(),
-            result: None,
-        })
-    }
-
-    pub fn add_operand(mut self, operand: impl Into<Value>) -> Self {
-        self.0.operands.push(operand.into());
-        self
-    }
-
-    pub fn add_block(mut self, block: Block) -> Self {
-        self.0.blocks.push(block);
-        self
-    }
-
-    pub fn add_result(mut self, result: impl Into<Var>) -> Self {
-        self.0.result = Some(result.into());
-        self
-    }
-
-    pub fn build(self) -> Operation {
-        self.0
     }
 }
 

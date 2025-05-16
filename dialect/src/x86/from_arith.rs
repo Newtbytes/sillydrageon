@@ -1,4 +1,4 @@
-use lorax::{RewriteRule, RewriteRuleSet, RewritingCtx};
+use lorax::{Operation, RewriteRule, RewriteRuleSet, RewritingCtx};
 
 use super::ops::*;
 
@@ -8,12 +8,12 @@ impl<'block> RewriteRule<RewritingCtx<'block>> for LowerBinop {
         match (ctx.name(), ctx.operands(), ctx.result()) {
             (name, &[src], &Some(dst)) => {
                 ctx.replace(match name {
-                    "arith.neg" => neg(dst.clone()),
+                    "arith.negate" => neg(dst.into()),
                     "arith.complement" => todo!("complement"),
-                    _ => unreachable!("unexpected name: {}", name),
+                    _ => return (),
                 });
 
-                ctx.insert_behind(mov(src.clone(), dst.clone()));
+                ctx.insert_behind(mov(src, dst.into()));
             }
             _ => (),
         }

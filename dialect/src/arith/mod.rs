@@ -1,8 +1,9 @@
-use lorax::{OpBuilder, Operation, Value, Var};
+use lorax::{Operation, Value, Var, def_op};
 
-pub fn negate<'op>(val: Value) -> Operation {
-    OpBuilder::new("arith.neg")
-        .add_operand(val)
-        .add_result(Var::new())
-        .build()
+def_op! {
+    arith.negate(val: Value)
+}
+
+def_op! {
+    arith.complement(val: Value)
 }
