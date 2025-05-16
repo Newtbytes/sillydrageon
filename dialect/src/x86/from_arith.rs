@@ -1,4 +1,4 @@
-use lorax::{Operation, RewriteRule, RewriteRuleSet, RewritingCtx};
+use lorax::{RewriteRule, RewriteRuleSet, RewritingCtx};
 
 use super::ops::*;
 

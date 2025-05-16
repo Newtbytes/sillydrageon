@@ -1,7 +1,7 @@
-use lorax::{Operation, Value, Var, def_op};
+use lorax::{Operation, Value, def_op};
 
 def_op! {
-    x86.mov(src: Value, dst: Var) -> dst
+    x86.mov(src: Value, dst: Value) -> dst
 }
 
 def_op! {

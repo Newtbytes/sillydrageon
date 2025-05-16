@@ -1,11 +1,11 @@
 use std::{fmt::Display, sync::atomic};
 
 #[derive(Debug, Clone, Copy)]
-pub struct Var {
+pub struct Value {
     id: usize,
 }
 
-impl Var {
+impl Value {
     pub fn new() -> Self {
         static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
@@ -15,45 +15,13 @@ impl Var {
     }
 }
 
-impl Display for Var {
+impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "%{}", self.id)
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Constant {
-    pub val: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Value {
-    Var(Var),
-    Const(Constant),
-}
-
-impl From<Constant> for Value {
-    fn from(val: Constant) -> Self {
-        Self::Const(val)
-    }
-}
-
-impl From<Var> for Value {
-    fn from(var: Var) -> Self {
-        Self::Var(var)
-    }
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Value::Var(var) => write!(f, "{}", var),
-            Value::Const(imm) => write!(f, "{}", imm.val),
-        }
-    }
-}
-
-pub type OpResult = Option<Var>;
+pub type OpResult = Option<Value>;
 
 #[derive(Debug)]
 pub struct Operation {
@@ -61,6 +29,7 @@ pub struct Operation {
     pub operands: Vec<Value>,
     pub blocks: Vec<Block>,
     pub result: OpResult,
+    pub attr: Option<u32>,
 }
 
 impl Operation {
@@ -68,12 +37,12 @@ impl Operation {
         self.blocks.push(block);
     }
 
-    pub fn get_result(&self) -> Var {
+    pub fn get_result(&self) -> Value {
         self.result
             .expect("this should be called on an op with at least one result")
     }
 
-    pub fn get_mut_result(&mut self) -> &mut Var {
+    pub fn get_mut_result(&mut self) -> &mut Value {
         self.result
             .as_mut()
             .expect("this should be called on an op with at least one result")
@@ -94,6 +63,7 @@ macro_rules! def_op {
                 operands: Vec::new(),
                 blocks: vec![$field],
                 result: None,
+                attr: None,
             }
         }
     };
@@ -106,14 +76,28 @@ macro_rules! def_op {
                 operands: vec![$($field.into()),*],
                 blocks: Vec::new(),
                 result: def_op!(@ret $( $ret )?),
+                attr: None
+            }
+        }
+    };
+
+    // Operation with one attribute
+    ($dl:ident . $name:ident (  ) { value: $ty:ty }) => {
+        pub fn $name(value: $ty) -> Operation {
+            Operation {
+                name: stringify!($dl . $name),
+                operands: Vec::new(),
+                blocks: Vec::new(),
+                result: Some(Value::new()),
+                attr: Some(value),
             }
         }
     };
 
     // Result handling
-    (@ret) => { Some(Var::new()) };
+    (@ret) => { Some(Value::new()) };
     (@ret None) => { None };
-    (@ret Var) => { Some(Var::new()) };
+    (@ret Value) => { Some(Value::new()) };
     (@ret $ret:ident) => { Some(($ret).into()) };
 }
 
@@ -142,6 +126,10 @@ impl Display for Operation {
         }
 
         fmt_delimited_list(&mut self.operands.iter(), f)?;
+
+        if let Some(val) = self.attr {
+            write!(f, "{{ value: {val} }}")?;
+        }
 
         if !self.blocks.is_empty() {
             write!(f, "\n")?;

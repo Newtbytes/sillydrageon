@@ -1,9 +1,9 @@
 use lorax::{Operation, Value, def_op};
 
 def_op! {
-    arith.negate(val: Value)
+    x86.ax(src: Value)
 }
 
 def_op! {
-    arith.complement(val: Value)
+    x86.r10(src: Value)
 }

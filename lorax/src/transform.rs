@@ -1,4 +1,4 @@
-use crate::{Block, Operation, RewriteRule, RewriteRuleSet, Value, Var, walk_blocks};
+use crate::{Block, Operation, RewriteRule, RewriteRuleSet, Value, walk_blocks};
 
 pub struct RewritingCtx<'a> {
     block: &'a mut Block,
@@ -45,7 +45,7 @@ impl<'a> RewritingCtx<'a> {
         &self.get().name
     }
 
-    pub fn result(&self) -> &Option<Var> {
+    pub fn result(&self) -> &Option<Value> {
         &self.get().result
     }
 

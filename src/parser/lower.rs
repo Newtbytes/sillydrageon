@@ -1,6 +1,6 @@
 // Lower AST to IR
 
-use lorax::{Block, Constant, Value};
+use lorax::{Block, Value, builtin};
 
 use super::ast;
 
@@ -16,7 +16,7 @@ fn lower_expr(block: &mut Block, expr: &ast::Expr) -> Value {
             ast::UnaryOp::Negate => arith::negate(lower_expr(block, expr)),
         },
 
-        ast::Expr::Constant(val) => return Constant { val: *val }.into(),
+        ast::Expr::Constant(val) => builtin::constant(*val),
     };
 
     block.push(op).get_result().into()
