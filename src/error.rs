@@ -1,7 +1,7 @@
 use std::fmt::{self};
 use std::process::Termination;
 
-use crate::parser::{Token, TokenKind};
+use crate::parser::ast::{Token, TokenKind};
 use crate::src::Source;
 
 pub enum CompilerError {

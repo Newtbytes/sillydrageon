@@ -9,6 +9,11 @@ pub enum TokenKind {
     Void,
     Return,
 
+    // Operations
+    Complement,
+    Negate,
+    Decrement,
+
     // ( )
     LParen,
     RParen,
@@ -49,4 +54,11 @@ pub enum Stmt {
 #[derive(Debug)]
 pub enum Expr {
     Constant(u32),
+    Unary(UnaryOp, Box<Expr>),
+}
+
+#[derive(Debug)]
+pub enum UnaryOp {
+    Complement,
+    Negate,
 }

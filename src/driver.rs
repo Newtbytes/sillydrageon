@@ -5,9 +5,11 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::codegen;
 use crate::error::CompilerError;
 use crate::parser;
+use crate::parser::ast;
+use dialect::x86;
+use lorax::rewrite_blocks;
 
 const CC: &str = "gcc";
 
@@ -139,17 +141,12 @@ pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
     Ok(dst)
 }
 
-pub fn tokenize(src: &str) -> Result<Vec<parser::Token>, CompilerError> {
+pub fn tokenize(src: &str) -> Result<Vec<ast::Token>, CompilerError> {
     parser::tokenize(src)
 }
 
-pub fn parser(tokens: Vec<parser::Token>) -> Result<Option<parser::Program>, CompilerError> {
+pub fn parser(tokens: Vec<ast::Token>) -> Result<ast::Program, CompilerError> {
     parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)
-}
-
-pub fn codegen(ast: parser::Program) -> String {
-    let asm = codegen::lower(&ast);
-    codegen::emit(&asm)
 }
 
 #[derive(clap::Parser)]
@@ -161,6 +158,9 @@ pub struct Cli {
 
     #[arg(long, action = clap::ArgAction::SetTrue)]
     parse: bool,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    tacky: bool,
 
     #[arg(long, action = clap::ArgAction::SetTrue)]
     codegen: bool,
@@ -190,20 +190,30 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         return Ok(());
     }
 
-    let ast = match ast {
-        Some(x) => x,
-        None => return Ok(()),
-    };
-
-    // codegen
-    let asm = codegen(ast);
-    if cli.codegen {
-        println!("{}", asm);
+    // 'tacky' is the option to generate IR
+    let ir = &mut parser::lower_program(&ast);
+    if cli.tacky {
+        println!("{}", ir);
         return Ok(());
     }
 
-    asm_file.write(asm)?;
-    assemble(asm_file)?;
+    // codegen
 
-    Ok(())
+    // TODO: put this somewhere else
+
+    rewrite_blocks(ir, x86::rules());
+
+    println!("{}", ir);
+
+    if cli.codegen {
+        println!("{}", ir);
+        return Ok(());
+    }
+
+    todo!()
+
+    // asm_file.write(asm)?;
+    // assemble(asm_file)?;
+
+    // Ok(())
 }
