@@ -140,6 +140,19 @@ pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
     Ok(dst)
 }
 
+pub fn tokenize(src: &str) -> Result<Vec<parser::Token>, CompilerError> {
+    parser::tokenize(src)
+}
+
+pub fn parser(tokens: Vec<parser::Token>) -> Result<Option<parser::Program>, CompilerError> {
+    parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)
+}
+
+pub fn codegen(ast: parser::Program) -> String {
+    let asm = codegen::lower(&ast);
+    codegen::emit(&asm)
+}
+
 #[derive(clap::Parser)]
 pub struct Cli {
     input: String,
@@ -168,16 +181,14 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     let src = src_file.read()?;
 
     // tokenization
-    let tokens = parser::tokenize(&src)?;
-
+    let tokens = tokenize(&src)?;
     if cli.lex {
         dbg!(&tokens);
         return Ok(());
     }
 
     // parsing
-    let ast = parser::parse(&mut tokens.into_iter()).map_err(CompilerError::Parser)?;
-
+    let ast = parser(tokens)?;
     if cli.parse {
         dbg!(ast);
         return Ok(());
