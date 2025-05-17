@@ -12,10 +12,7 @@ fn test_parse_valid(program: &str) {
 test_each_file! { in "tests/invalid/" => test_parse_invalid }
 fn test_parse_invalid(program: &str) {
     let tokens = driver::tokenize(program).unwrap();
-    match driver::parser(tokens) {
-        Ok(_) => panic!(),
-        Err(_) => return (),
-    }
+    if let Ok(_) = driver::parser(tokens) { panic!() }
 }
 
 proptest! {
