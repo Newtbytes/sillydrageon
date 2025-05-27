@@ -1,6 +1,9 @@
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 
-use crate::ctx::{Pool, Ptr};
+use crate::{
+    Context,
+    ctx::{Pool, Ptr},
+};
 
 pub trait LinkedNode {
     fn ahead(&self) -> Option<Ptr>;

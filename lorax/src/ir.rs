@@ -1,5 +1,6 @@
 use std::{fmt::Display, sync::atomic};
 
+use crate::Emit;
 use crate::attr::{Attribute, AttributeMap};
 use crate::ctx::Context;
 use crate::ctx::{Pool, Ptr};
@@ -190,8 +191,8 @@ where
     Ok(())
 }
 
-impl Display for Operation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Emit for Operation {
+    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(_) = self.result.ptr {
             write!(f, "{} := {} ", self.result, self.name)?;
         } else {
@@ -209,8 +210,9 @@ impl Display for Operation {
         }
 
         for block in &self.blocks {
-            todo!();
-            // write!(f, "{}", block)?;
+            if let Some(block) = ctx.blocks.get(*block) {
+                block.fmt(ctx, f)?;
+            }
         }
 
         Ok(())
@@ -290,16 +292,16 @@ impl LinkedList<Operation> for Block {
     }
 }
 
-impl Display for Block {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Emit for Block {
+    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, ".bb{}:", self.id)?;
 
-        todo!();
+        for op in self.iter(&ctx.ops) {
+            write!(f, "\t")?;
+            Emit::fmt(op, ctx, f)?;
+            write!(f, "\n")?;
+        }
 
-        // for op in self.iter() {
-        //     writeln!(f, "    {}", op)?;
-        // }
-
-        // Ok(())
+        Ok(())
     }
 }

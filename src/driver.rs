@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::fs;
 use std::io;
+use std::io::stdout;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -10,6 +11,8 @@ use crate::parser;
 use crate::parser::ast;
 use dialect::x86;
 use lorax::Context;
+use lorax::Emit;
+use lorax::Emitter;
 use lorax::Ptr;
 use lorax::link::LinkedList;
 
@@ -196,7 +199,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     let mut ctx = Context::new();
     let ir = &mut parser::lower_program(&mut ctx, &ast);
     if cli.tacky {
-        println!("{}", ir);
+        println!("{}", Emitter::new(ir, &ctx));
         return Ok(());
     }
 
@@ -217,10 +220,10 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         }
     }
 
-    println!("{}", ir);
+    println!("{}", Emitter::new(ir, &ctx));
 
     if cli.codegen {
-        println!("{}", ir);
+        println!("{}", Emitter::new(ir, &ctx));
         return Ok(());
     }
 
