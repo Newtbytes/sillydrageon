@@ -10,10 +10,8 @@ use crate::parser;
 use crate::parser::ast;
 use dialect::x86;
 use lorax::Context;
-use lorax::Operation;
 use lorax::Ptr;
 use lorax::link::LinkedList;
-use lorax::link::LinkedNode;
 
 const CC: &str = "gcc";
 
