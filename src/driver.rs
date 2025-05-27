@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::fs;
 use std::io;
-use std::io::stdout;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -11,7 +10,6 @@ use crate::parser;
 use crate::parser::ast;
 use dialect::x86;
 use lorax::Context;
-use lorax::Emit;
 use lorax::Emitter;
 use lorax::Ptr;
 use lorax::link::LinkedList;
