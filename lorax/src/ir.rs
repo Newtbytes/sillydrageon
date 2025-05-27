@@ -31,12 +31,6 @@ impl Value {
     }
 }
 
-impl From<Ptr> for Value {
-    fn from(value: Ptr) -> Self {
-        Value::new(Some(value))
-    }
-}
-
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "%{}", self.id)
@@ -256,10 +250,10 @@ impl Block {
         ptr
     }
 
-    pub fn push(&mut self, ctx: &mut Context, op: Operation) -> Ptr {
+    pub fn push(&mut self, ctx: &mut Context, op: Operation) -> Value {
         let ptr = self.alloc_op(&mut ctx.ops, op);
         LinkedList::push(self, &mut ctx.ops, ptr);
-        ptr
+        ctx.ops.get(ptr).unwrap().result
     }
 
     pub fn insert_behind(
@@ -267,10 +261,15 @@ impl Block {
         ctx: &mut Pool<Operation>,
         root: Ptr,
         inserted: Operation,
-    ) -> Ptr {
+    ) -> Value {
         let inserted = self.alloc_op(ctx, inserted);
         LinkedList::insert_behind(self, ctx, root, inserted);
-        inserted
+        ctx.get(inserted).unwrap().result
+    }
+
+    pub fn replace(&self, ctx: &mut Pool<Operation>, root: Ptr, mut new: Operation) {
+        new.result.id = ctx.deref_mut(root).result.id;
+        LinkedList::replace(self, ctx, root, new);
     }
 }
 

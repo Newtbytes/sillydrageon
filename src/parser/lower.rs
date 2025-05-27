@@ -19,7 +19,7 @@ fn lower_expr(ctx: &mut Context, block: &mut Block, expr: &ast::Expr) -> Value {
         ast::Expr::Constant(val) => arith::constant(*val),
     };
 
-    block.push(ctx, op).into()
+    block.push(ctx, op)
 }
 
 pub fn lower_stmt(ctx: &mut Context, block: &mut Block, stmt: &ast::Stmt) {

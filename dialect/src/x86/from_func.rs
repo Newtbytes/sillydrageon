@@ -1,4 +1,4 @@
-use lorax::{Block, Operation, Pool, Ptr, link::LinkedList};
+use lorax::{Block, Operation, Pool, Ptr};
 
 use super::{ops::*, state::ax};
 
@@ -8,7 +8,7 @@ pub fn lower_func(ctx: &mut Pool<Operation>, ops: &mut Block, op_ptr: Ptr) {
     match (op.name, op.operands.as_slice()) {
         ("func.ret", &[val]) => {
             let v0 = ops.insert_behind(ctx, op_ptr, ax());
-            let _ = ops.insert_behind(ctx, op_ptr, mov(val, v0.into()));
+            let _ = ops.insert_behind(ctx, op_ptr, mov(val, v0));
 
             ops.replace(ctx, op_ptr, ret());
         }

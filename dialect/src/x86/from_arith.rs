@@ -1,4 +1,4 @@
-use lorax::{Block, Operation, Pool, Ptr, link::LinkedList};
+use lorax::{Block, Operation, Pool, Ptr};
 
 use super::ops::*;
 
