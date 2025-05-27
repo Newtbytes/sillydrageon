@@ -1,23 +1,38 @@
 use std::{fmt::Display, sync::atomic};
 
 use crate::attr::{Attribute, AttributeMap};
+use crate::ctx::Context;
+use crate::ctx::{Pool, Ptr};
 use crate::link::{LinkedList, LinkedNode};
-use crate::pool::{Pool, Ptr};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Value {
     id: usize,
-    pub(crate) def: Option<Ptr>,
+    ptr: Option<Ptr>,
 }
 
 impl Value {
-    pub fn new(ptr: Option<Ptr>) -> Self {
+    fn unique_id() -> usize {
         static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
+        TMP_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
+    }
+
+    pub fn new(ptr: Option<Ptr>) -> Self {
         Self {
-            id: TMP_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed),
-            def: ptr,
+            id: Self::unique_id(),
+            ptr,
         }
+    }
+
+    pub fn ptr(&self) -> Option<Ptr> {
+        self.ptr
+    }
+}
+
+impl From<Ptr> for Value {
+    fn from(value: Ptr) -> Self {
+        Value::new(Some(value))
     }
 }
 
@@ -32,9 +47,10 @@ pub type OpResult = Option<Value>;
 #[derive(Debug)]
 pub struct Operation {
     pub name: &'static str,
+
     pub operands: Vec<Value>,
-    pub blocks: Vec<Block>,
-    pub result: OpResult,
+    pub blocks: Vec<Ptr>,
+    pub result: Value,
 
     pub attributes: AttributeMap,
 
@@ -61,26 +77,23 @@ impl LinkedNode for Operation {
 }
 
 impl Operation {
-    pub fn push_block(&mut self, block: Block) {
-        self.blocks.push(block);
+    pub fn push_block(&mut self, ctx: &mut Context, block: Block) {
+        self.blocks.push(ctx.blocks.alloc(block));
     }
 
     pub fn get_result(&self) -> Value {
         self.result
-            .expect("this should be called on an op with at least one result")
     }
 
     pub fn get_mut_result(&mut self) -> &mut Value {
-        self.result
-            .as_mut()
-            .expect("this should be called on an op with at least one result")
+        &mut self.result
     }
 
-    pub fn walk_blocks(&self) -> impl Iterator<Item = &Block> {
+    pub fn walk_blocks(&self) -> impl Iterator<Item = &Ptr> {
         self.blocks.iter()
     }
 
-    pub fn walk_blocks_mut(&mut self) -> impl Iterator<Item = &mut Block> {
+    pub fn walk_blocks_mut(&mut self) -> impl Iterator<Item = &mut Ptr> {
         self.blocks.iter_mut()
     }
 
@@ -93,13 +106,14 @@ impl Operation {
 macro_rules! def_op {
     // Block-only operation (no operands, no result)
     ($dl:ident . $name:ident ($field:ident : Block)) => {
-        pub fn $name($field: Block) -> Operation {
-            use ::lorax::attr::AttributeMap;
+        use ::lorax::{Ptr, Operation, attr::AttributeMap};
+
+        pub fn $name($field: Ptr) -> Operation {
             Operation {
                 name: stringify!($dl . $name),
                 operands: Vec::new(),
                 blocks: vec![$field],
-                result: None,
+                result: Value::new(None),
 
                 attributes: AttributeMap::new(),
 
@@ -140,7 +154,7 @@ macro_rules! def_op {
                 name: stringify!($dl . $name),
                 operands: Vec::new(),
                 blocks: Vec::new(),
-                result: Some(Value::new(None)),
+                result: Value::new(None),
 
                 attributes: attributes,
 
@@ -154,10 +168,10 @@ macro_rules! def_op {
     (@attr) => {};
 
     // Result handling
-    (@ret) => { Some(Value::new(None)) };
-    (@ret None) => { None };
+    (@ret) => { Value::new(None) };
+    (@ret None) => { Value::new(None) };
     (@ret Value) => { Some(Value::new()) };
-    (@ret $ret:ident) => { Some(($ret).into()) };
+    (@ret $ret:ident) => { $ret.into() };
 }
 
 fn fmt_delimited_list<I>(list: &mut I, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
@@ -178,8 +192,8 @@ where
 
 impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(var) = self.result {
-            write!(f, "{} := {} ", var, self.name)?;
+        if let Some(_) = self.result.ptr {
+            write!(f, "{} := {} ", self.result, self.name)?;
         } else {
             write!(f, "{} ", self.name)?;
         }
@@ -195,7 +209,8 @@ impl Display for Operation {
         }
 
         for block in &self.blocks {
-            write!(f, "{}", block)?;
+            todo!();
+            // write!(f, "{}", block)?;
         }
 
         Ok(())
@@ -205,7 +220,6 @@ impl Display for Operation {
 #[derive(Debug)]
 pub struct Block {
     pub(crate) id: usize,
-    pub pool: Pool<Operation>,
 
     head: Option<Ptr>,
     tail: Option<Ptr>,
@@ -220,56 +234,41 @@ impl Block {
     pub fn new() -> Self {
         Self {
             id: Self::unique_id(),
-            pool: Pool::new(),
 
             head: None,
             tail: None,
         }
     }
 
-    pub fn get(&self, ptr: Ptr) -> &Operation {
-        self.pool.deref(ptr)
-    }
+    pub fn alloc_op(&mut self, ctx: &mut Pool<Operation>, op: Operation) -> Ptr {
+        let ptr = ctx.alloc(op);
+        let old_ptr = ctx.deref_mut(ptr).get_mut_result();
 
-    pub fn get_mut(&mut self, ptr: Ptr) -> &mut Operation {
-        self.pool.deref_mut(ptr)
-    }
-
-    pub fn walk_ops(&self) -> impl Iterator<Item = &Operation> {
-        self.pool.iter()
-    }
-
-    pub fn walk_ops_mut(&mut self) -> impl Iterator<Item = &mut Operation> {
-        self.pool.iter_mut()
-    }
-
-    pub fn push(&mut self, op: Operation) -> Ptr {
-        LinkedList::push(self, op)
-    }
-
-    pub fn len(&self) -> usize {
-        self.pool.len()
-    }
-
-    /// Traverse value definitions in each operation's operands
-    /// to create a linear sequence of operations.
-    pub fn linearize(&self) -> Vec<Ptr> {
-        let mut linearized = Vec::new();
-
-        for (id, op) in self.walk_ops().enumerate() {
-            for operand in &op.operands {
-                if let Some(def) = operand.def {
-                    if linearized.iter().any(|x| *x == def) {
-                        continue;
-                    }
-                    linearized.push(def);
-                }
+        if let Value { id, ptr: None } = old_ptr {
+            *old_ptr = Value {
+                id: *id,
+                ptr: Some(ptr),
             }
-
-            linearized.push(id.into());
         }
 
-        linearized
+        ptr
+    }
+
+    pub fn push(&mut self, ctx: &mut Context, op: Operation) -> Ptr {
+        let ptr = self.alloc_op(&mut ctx.ops, op);
+        LinkedList::push(self, &mut ctx.ops, ptr);
+        ptr
+    }
+
+    pub fn insert_behind(
+        &mut self,
+        ctx: &mut Pool<Operation>,
+        root: Ptr,
+        inserted: Operation,
+    ) -> Ptr {
+        let inserted = self.alloc_op(ctx, inserted);
+        LinkedList::insert_behind(self, ctx, root, inserted);
+        inserted
     }
 }
 
@@ -289,35 +288,18 @@ impl LinkedList<Operation> for Block {
     fn tail_mut(&mut self) -> &mut Option<Ptr> {
         &mut self.tail
     }
-
-    fn pool(&self) -> &Pool<Operation> {
-        &self.pool
-    }
-
-    fn pool_mut(&mut self) -> &mut Pool<Operation> {
-        &mut self.pool
-    }
 }
 
 impl Display for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, ".bb{}:", self.id)?;
 
-        for op in self.iter() {
-            writeln!(f, "    {}", op)?;
-        }
+        todo!();
 
-        Ok(())
+        // for op in self.iter() {
+        //     writeln!(f, "    {}", op)?;
+        // }
+
+        // Ok(())
     }
-}
-
-// this is incorect, but for now it will do
-pub fn walk_blocks<'a>(block: &'a mut Block) -> Box<dyn Iterator<Item = &'a mut Block> + 'a> {
-    let mut blocks = Vec::new();
-
-    for op in block.walk_ops_mut() {
-        blocks.extend(op.walk_blocks_mut());
-    }
-
-    Box::new(blocks.into_iter())
 }
