@@ -9,7 +9,7 @@ jobs:
     if: |
         !contains(join(github.event.pull_request.labels.*.name, ','), 'self-approved') &&
         github.event.pull_request.user.login == github.repository_owner &&
-        github.event.pull_request.requested_reviewers[0]  
+        github.event.pull_request.requested_reviewers[0] == null
     name: Enforce Self Review
     runs-on: ubuntu-latest
     steps:
