@@ -210,7 +210,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     for block_ptr in 0..num_blocks {
         let block = ctx.blocks.deref_mut(block_ptr.into());
 
-        let ops = block.iter(&ctx.ops).filter_map(|op| op.get_result().ptr());
+        let ops = block.iter(&ctx.ops);
         let ops: Vec<Ptr> = ops.collect();
 
         for op in ops {
