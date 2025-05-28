@@ -1,4 +1,4 @@
-use std::{fmt::Display, sync::atomic};
+use std::sync::atomic;
 
 use crate::Emit;
 use crate::attr::{Attribute, AttributeMap};
@@ -183,17 +183,22 @@ macro_rules! def_op {
     (@ret $ret:ident) => { $ret.into() };
 }
 
-fn fmt_delimited_list<I>(list: &mut I, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+fn fmt_delimited_list<I>(
+    ctx: &Context,
+    list: &mut I,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result
 where
     I: Iterator,
-    I::Item: Display,
+    I::Item: Emit,
 {
     if let Some(item) = list.next() {
-        write!(f, "{}", item)?;
+        Emit::fmt(&item, ctx, f)?;
     }
 
     for item in list {
-        write!(f, ", {}", item)?;
+        write!(f, ", ")?;
+        Emit::fmt(&item, ctx, f)?;
     }
 
     Ok(())
@@ -203,13 +208,7 @@ impl Emit for Operation {
     fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "%{} := {} ", self.id, self.name)?;
 
-        self.operands
-            .iter()
-            .try_for_each(|val| -> std::fmt::Result {
-                Emit::fmt(val, ctx, f)?;
-
-                write!(f, ",")
-            })?;
+        fmt_delimited_list(ctx, &mut self.operands.iter().copied(), f)?;
 
         if !self.attributes.is_empty() {
             write!(f, "{:?}", self.attributes)?;
