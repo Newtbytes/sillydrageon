@@ -38,6 +38,12 @@ pub struct PassManager {
     rules: Vec<PoolTransform<Operation, Block>>,
 }
 
+impl Default for PassManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PassManager {
     pub fn new() -> Self {
         Self { rules: Vec::new() }

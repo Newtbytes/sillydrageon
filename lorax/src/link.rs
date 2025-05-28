@@ -81,7 +81,7 @@ pub trait LinkedList<T: LinkedNode> {
 
     fn iter<'a>(&self, ctx: &'a Pool<T>) -> LinkedListIter<'a, T> {
         LinkedListIter {
-            ctx: ctx,
+            ctx,
             current: *self.head(),
             ty: PhantomData,
         }
@@ -90,9 +90,8 @@ pub trait LinkedList<T: LinkedNode> {
 
 #[cfg(test)]
 mod test {
-    
+
     use crate::{Operation, Value, attr::AttributeMap};
-    
 
     fn dummy(src: Value, dst: Value) -> Operation {
         Operation {

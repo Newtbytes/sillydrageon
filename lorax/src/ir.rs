@@ -187,7 +187,7 @@ where
 
 impl Emit for Operation {
     fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(_) = self.result.ptr {
+        if self.result.ptr.is_some() {
             write!(f, "{} := {} ", self.result, self.name)?;
         } else {
             write!(f, "{} ", self.name)?;
@@ -304,7 +304,7 @@ impl Emit for Block {
         for op in self.iter(&ctx.ops) {
             write!(f, "\t")?;
             Emit::fmt(op, ctx, f)?;
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         Ok(())
