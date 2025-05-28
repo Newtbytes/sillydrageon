@@ -7,6 +7,12 @@ pub struct RewriteRuleSet<T> {
     rules: Vec<Box<dyn RewriteRule<T>>>,
 }
 
+impl<T> Default for RewriteRuleSet<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> RewriteRuleSet<T> {
     pub fn new() -> Self {
         Self { rules: Vec::new() }

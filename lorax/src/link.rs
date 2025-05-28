@@ -1,9 +1,6 @@
-use std::{fmt::Display, marker::PhantomData};
+use std::marker::PhantomData;
 
-use crate::{
-    Context,
-    ctx::{Pool, Ptr},
-};
+use crate::ctx::{Pool, Ptr};
 
 pub trait LinkedNode {
     fn ahead(&self) -> Option<Ptr>;
@@ -93,9 +90,9 @@ pub trait LinkedList<T: LinkedNode> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::{Block, Operation, Value, attr::AttributeMap};
-    use proptest::prelude::*;
+    
+    use crate::{Operation, Value, attr::AttributeMap};
+    
 
     fn dummy(src: Value, dst: Value) -> Operation {
         Operation {
