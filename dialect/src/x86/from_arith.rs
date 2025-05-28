@@ -14,7 +14,7 @@ pub fn lower_unop(ctx: &mut Pool<Operation>, ops: &mut Block, op_ptr: Ptr) {
             match name {
                 "arith.negate" => neg(dst),
                 "arith.complement" => not(dst),
-                _ => return ,
+                _ => return,
             },
         );
     }
