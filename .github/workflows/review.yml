@@ -6,7 +6,7 @@ on:
 
 jobs:
   self-approve:
-    if: ${{ !contains(github.event.*.labels.*.name, 'self-approved') && github.event.pull_request.user.login == github.repository_owner && github.event.pull_request.requested_reviewers == ''}}
+    if: ${{ !contains(github.event.*.labels.*.name, 'self-approved') && github.event.pull_request.user.login == github.repository_owner && !github.event.pull_request.requested_reviewers}}
     name: Check Self Approved
     runs-on: ubuntu-latest
     steps:
