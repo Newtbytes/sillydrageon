@@ -19,12 +19,12 @@ impl<'a, T> Iterator for LinkedListIter<'a, T>
 where
     T: LinkedNode + 'a,
 {
-    type Item = &'a T;
+    type Item = Ptr;
     fn next(&mut self) -> Option<Self::Item> {
         let curr_ptr = self.current?;
         let node: &T = self.ctx.deref(curr_ptr);
         self.current = node.ahead();
-        Some(node)
+        Some(curr_ptr)
     }
 }
 
@@ -92,27 +92,33 @@ pub trait LinkedList<T: LinkedNode> {
 mod test {
 
     use crate::{
-        Block, Context, Operation, Value,
+        Block, Context, Operation, Ptr, Value,
         attr::AttributeMap,
         link::{LinkedList, LinkedNode},
     };
 
     use proptest::prelude::*;
 
-    fn dummy(src: Value, dst: Value) -> Operation {
-        Operation {
-            name: "test.dummy",
-            operands: vec![src],
-            blocks: Vec::new(),
-            result: dst,
-            attributes: AttributeMap::new(),
-            behind: None,
-            ahead: None,
-        }
+    fn dummy(src: Value) -> Operation {
+        Operation::new(
+            "test.dummy",
+            vec![src],
+            Vec::new(),
+            AttributeMap::new(),
+            None,
+            None,
+        )
     }
 
-    fn val() -> Value {
-        Value::new(None)
+    fn val() -> Operation {
+        Operation::new(
+            "test.dummy_val",
+            Vec::new(),
+            Vec::new(),
+            AttributeMap::new(),
+            None,
+            None,
+        )
     }
 
     #[test]
@@ -123,10 +129,11 @@ mod test {
         assert_eq!(*bl.head(), None);
         assert_eq!(*bl.tail(), None);
 
-        let ptr = bl.push(&mut ctx, dummy(val(), val()));
+        let c = ctx.ops.alloc(val());
+        let ptr = bl.push(&mut ctx, dummy(c.into())).into();
 
-        assert_eq!(*bl.head(), ptr.ptr());
-        assert_eq!(*bl.tail(), ptr.ptr());
+        assert_eq!(*bl.head(), Some(ptr));
+        assert_eq!(*bl.tail(), Some(ptr));
     }
 
     #[test]
@@ -134,18 +141,16 @@ mod test {
         let mut bl = Block::new();
         let mut ctx = Context::new();
 
-        let ptr1 = bl.push(&mut ctx, dummy(val(), val()));
-        let ptr2 = bl.push(&mut ctx, dummy(val(), val()));
-        let ptr3 = bl.push(&mut ctx, dummy(val(), val()));
+        let thing = ctx.ops.alloc(val()).into();
 
-        let ptr1 = ptr1.ptr().unwrap();
-        let ptr2 = ptr2.ptr().unwrap();
-        let ptr3 = ptr3.ptr().unwrap();
+        let ptr1: Ptr = bl.push(&mut ctx, dummy(thing)).into();
+        let ptr2: Ptr = bl.push(&mut ctx, dummy(thing)).into();
+        let ptr3: Ptr = bl.push(&mut ctx, dummy(thing)).into();
 
         let ctx = &ctx.ops;
 
         // Forward traversal
-        let ptrs: Vec<Value> = bl.iter(ctx).map(|n| n.result).collect();
+        let ptrs: Vec<_> = bl.iter(ctx).collect();
         assert_eq!(ptrs.len(), 3);
         // The first node's ahead is Some(ptr2), second is Some(ptr3), third is None
         assert_eq!(ctx.deref(ptr1).ahead(), ptr2.into());
@@ -163,22 +168,20 @@ mod test {
         let mut bl = Block::new();
         let mut ctx = Context::new();
 
-        let ptr1 = bl.push(&mut ctx, dummy(val(), val()));
-        let ptr2 = bl.push(&mut ctx, dummy(val(), val()));
+        let thing = ctx.ops.alloc(val()).into();
 
-        let ptr1 = ptr1.ptr().unwrap();
-        let ptr2 = ptr2.ptr().unwrap();
+        let ptr1 = bl.push(&mut ctx, dummy(thing)).into();
+        let ptr2 = bl.push(&mut ctx, dummy(thing)).into();
 
-        let ctx = &mut ctx.ops;
-
-        let ptr3 = (&mut bl).insert_behind(ctx, ptr2, dummy(val(), val()));
-        let ptr3 = ptr3.ptr().unwrap();
+        let ptr3 = (&mut bl)
+            .insert_behind(&mut ctx.ops, ptr2, dummy(thing))
+            .into();
 
         // ptr3 should be between ptr1 and ptr2
-        assert_eq!(ctx.deref(ptr1).ahead(), Some(ptr3));
-        assert_eq!(ctx.deref(ptr3).ahead(), Some(ptr2));
-        assert_eq!(ctx.deref(ptr2).behind(), Some(ptr3));
-        assert_eq!(ctx.deref(ptr3).behind(), Some(ptr1));
+        assert_eq!(ctx.ops.deref(ptr1).ahead(), Some(ptr3));
+        assert_eq!(ctx.ops.deref(ptr3).ahead(), Some(ptr2));
+        assert_eq!(ctx.ops.deref(ptr2).behind(), Some(ptr3));
+        assert_eq!(ctx.ops.deref(ptr3).behind(), Some(ptr1));
     }
 
     #[test]
@@ -189,8 +192,9 @@ mod test {
         assert!(bl.head().is_none());
         assert!(bl.tail().is_none());
 
-        let ptr = bl.push(&mut ctx, dummy(val(), val()));
-        let ptr = ptr.ptr().unwrap();
+        let thing = ctx.ops.alloc(val()).into();
+
+        let ptr = bl.push(&mut ctx, dummy(thing)).into();
 
         assert_eq!(bl.head(), bl.tail());
         assert_eq!(ctx.ops.deref(ptr).ahead(), None);
@@ -202,8 +206,10 @@ mod test {
         let mut bl = Block::new();
         let mut ctx = Context::new();
 
-        let ptrs: Vec<_> = (0..10)
-            .filter_map(|_| bl.push(&mut ctx, dummy(val(), val())).ptr())
+        let thing = ctx.ops.alloc(val()).into();
+
+        let ptrs: Vec<Ptr> = (0..10)
+            .map(|_| bl.push(&mut ctx, dummy(thing)).into())
             .collect();
 
         let ctx = &ctx.ops;
@@ -226,8 +232,10 @@ mod test {
             let mut bl = Block::new();
             let mut ctx = Context::new();
 
+            let thing = ctx.ops.alloc(val()).into();
+
             for _ in 0..count {
-                let _ = bl.push(&mut ctx, dummy(val(), val()));
+                let _ = bl.push(&mut ctx, dummy(thing));
             }
 
             prop_assert_eq!(bl.iter(&ctx.ops).count(), count);

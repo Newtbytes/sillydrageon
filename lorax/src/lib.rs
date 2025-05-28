@@ -8,6 +8,6 @@ mod transform;
 
 pub use ctx::{Context, Pool, Ptr};
 pub use io::{Emit, Emitter};
-pub use ir::{Block, OpResult, Operation, Value};
+pub use ir::{Block, Operation, Value};
 pub use rewrite::{RewriteRule, RewriteRuleSet};
 pub use transform::PassManager;

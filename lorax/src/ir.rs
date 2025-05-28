@@ -1,4 +1,4 @@
-use std::{fmt::Display, sync::atomic};
+use std::sync::atomic;
 
 use crate::Emit;
 use crate::attr::{Attribute, AttributeMap};
@@ -8,44 +8,40 @@ use crate::link::{LinkedList, LinkedNode};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Value {
-    id: usize,
-    ptr: Option<Ptr>,
+    ptr: Ptr,
 }
 
 impl Value {
-    fn unique_id() -> usize {
-        static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
-
-        TMP_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
-    }
-
-    pub fn new(ptr: Option<Ptr>) -> Self {
-        Self {
-            id: Self::unique_id(),
-            ptr,
-        }
-    }
-
-    pub fn ptr(&self) -> Option<Ptr> {
-        self.ptr
+    pub fn get_id(&self, ctx: &Context) -> usize {
+        ctx.ops.deref(self.ptr).id
     }
 }
 
-impl Display for Value {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "%{}", self.id)
+impl From<Ptr> for Value {
+    fn from(ptr: Ptr) -> Self {
+        Self { ptr }
     }
 }
 
-pub type OpResult = Option<Value>;
+impl From<Value> for Ptr {
+    fn from(val: Value) -> Self {
+        val.ptr
+    }
+}
+
+impl Emit for Value {
+    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "%{}", self.get_id(ctx))
+    }
+}
 
 #[derive(Debug)]
 pub struct Operation {
     pub name: &'static str,
+    id: usize,
 
     pub operands: Vec<Value>,
     pub blocks: Vec<Ptr>,
-    pub result: Value,
 
     pub attributes: AttributeMap,
 
@@ -72,16 +68,37 @@ impl LinkedNode for Operation {
 }
 
 impl Operation {
+    fn unique_id() -> usize {
+        static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
+
+        TMP_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
+    }
+
+    // TODO: replace with an OpBuilder
+    pub fn new(
+        name: &'static str,
+
+        operands: Vec<Value>,
+        blocks: Vec<Ptr>,
+
+        attributes: AttributeMap,
+
+        behind: Option<Ptr>,
+        ahead: Option<Ptr>,
+    ) -> Self {
+        Self {
+            name,
+            id: Self::unique_id(),
+            operands,
+            blocks,
+            attributes,
+            behind,
+            ahead,
+        }
+    }
+
     pub fn push_block(&mut self, ctx: &mut Context, block: Block) {
         self.blocks.push(ctx.blocks.alloc(block));
-    }
-
-    pub fn get_result(&self) -> Value {
-        self.result
-    }
-
-    pub fn get_mut_result(&mut self) -> &mut Value {
-        &mut self.result
     }
 
     pub fn walk_blocks(&self) -> impl Iterator<Item = &Ptr> {
@@ -104,17 +121,16 @@ macro_rules! def_op {
         use ::lorax::{Ptr, Operation, attr::AttributeMap};
 
         pub fn $name($field: Ptr) -> Operation {
-            Operation {
-                name: stringify!($dl . $name),
-                operands: Vec::new(),
-                blocks: vec![$field],
-                result: Value::new(None),
+            Operation::new(
+                stringify!($dl . $name),
+                Vec::new(),
+                vec![$field],
 
-                attributes: AttributeMap::new(),
+                AttributeMap::new(),
 
-                behind: None,
-                ahead: None,
-            }
+                None,
+                None,
+            )
         }
     };
 
@@ -123,17 +139,16 @@ macro_rules! def_op {
         pub fn $name($($field: $ty),*) -> Operation {
             use ::lorax::attr::AttributeMap;
 
-            Operation {
-                name: stringify!($dl . $name),
-                operands: vec![$($field.into()),*],
-                blocks: Vec::new(),
-                result: def_op!(@ret $( $ret )?),
+            Operation::new(
+                stringify!($dl . $name),
+                vec![$($field.into()),*],
+                Vec::new(),
 
-                attributes: AttributeMap::new(),
+                AttributeMap::new(),
 
-                behind: None,
-                ahead: None,
-            }
+                None,
+                None,
+            )
         }
     };
 
@@ -145,17 +160,16 @@ macro_rules! def_op {
             let mut attributes = AttributeMap::new();
             attributes.insert("value".to_owned(), Attribute::Int(value));
 
-            Operation {
-                name: stringify!($dl . $name),
-                operands: Vec::new(),
-                blocks: Vec::new(),
-                result: Value::new(None),
+            Operation::new(
+                stringify!($dl . $name),
+                Vec::new(),
+                Vec::new(),
 
-                attributes: attributes,
+                attributes,
 
-                behind: None,
-                ahead: None,
-            }
+                None,
+                None,
+            )
         }
     };
 
@@ -169,17 +183,22 @@ macro_rules! def_op {
     (@ret $ret:ident) => { $ret.into() };
 }
 
-fn fmt_delimited_list<I>(list: &mut I, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+fn fmt_delimited_list<I>(
+    ctx: &Context,
+    list: &mut I,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result
 where
     I: Iterator,
-    I::Item: Display,
+    I::Item: Emit,
 {
     if let Some(item) = list.next() {
-        write!(f, "{}", item)?;
+        Emit::fmt(&item, ctx, f)?;
     }
 
     for item in list {
-        write!(f, ", {}", item)?;
+        write!(f, ", ")?;
+        Emit::fmt(&item, ctx, f)?;
     }
 
     Ok(())
@@ -187,13 +206,9 @@ where
 
 impl Emit for Operation {
     fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.result.ptr.is_some() {
-            write!(f, "{} := {} ", self.result, self.name)?;
-        } else {
-            write!(f, "{} ", self.name)?;
-        }
+        write!(f, "%{} := {} ", self.id, self.name)?;
 
-        fmt_delimited_list(&mut self.operands.iter(), f)?;
+        fmt_delimited_list(ctx, &mut self.operands.iter().copied(), f)?;
 
         if !self.attributes.is_empty() {
             write!(f, "{:?}", self.attributes)?;
@@ -242,24 +257,9 @@ impl Block {
         }
     }
 
-    pub fn alloc_op(&mut self, ctx: &mut Pool<Operation>, op: Operation) -> Ptr {
-        let ptr = ctx.alloc(op);
-        let old_ptr = ctx.deref_mut(ptr).get_mut_result();
-
-        if let Value { id, ptr: None } = old_ptr {
-            *old_ptr = Value {
-                id: *id,
-                ptr: Some(ptr),
-            }
-        }
-
-        ptr
-    }
-
     pub fn push(&mut self, ctx: &mut Context, op: Operation) -> Value {
-        let ptr = self.alloc_op(&mut ctx.ops, op);
-        LinkedList::push(self, &mut ctx.ops, ptr);
-        ctx.ops.get(ptr).unwrap().result
+        let ptr = ctx.ops.alloc(op);
+        LinkedList::push(self, &mut ctx.ops, ptr).into()
     }
 
     pub fn insert_behind(
@@ -268,13 +268,12 @@ impl Block {
         root: Ptr,
         inserted: Operation,
     ) -> Value {
-        let inserted = self.alloc_op(ctx, inserted);
-        LinkedList::insert_behind(self, ctx, root, inserted);
-        ctx.get(inserted).unwrap().result
+        let inserted = ctx.alloc(inserted);
+        LinkedList::insert_behind(self, ctx, root, inserted).into()
     }
 
     pub fn replace(&self, ctx: &mut Pool<Operation>, root: Ptr, mut new: Operation) {
-        new.result.id = ctx.deref_mut(root).result.id;
+        new.id = ctx.deref_mut(root).id;
         LinkedList::replace(self, ctx, root, new);
     }
 }
@@ -303,7 +302,7 @@ impl Emit for Block {
 
         for op in self.iter(&ctx.ops) {
             write!(f, "\t")?;
-            Emit::fmt(op, ctx, f)?;
+            Emit::fmt(ctx.ops.deref(op), ctx, f)?;
             writeln!(f)?;
         }
 

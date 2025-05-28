@@ -4,8 +4,9 @@ use super::ops::*;
 
 pub fn lower_unop(ctx: &mut Pool<Operation>, ops: &mut Block, op_ptr: Ptr) {
     let op = ctx.deref(op_ptr);
+    let dst = op_ptr.into();
 
-    if let (name, &[src], dst) = (op.name, op.operands.as_slice(), op.result) {
+    if let (name, &[src]) = (op.name, op.operands.as_slice()) {
         ops.insert_behind(ctx, op_ptr, mov(src, dst));
 
         ops.replace(
