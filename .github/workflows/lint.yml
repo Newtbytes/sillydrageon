@@ -1,4 +1,10 @@
-on: push
+on:
+  push:
+    paths:
+      - ".github/workflows/lint.yml"
+      - "Cargo.*"
+      - "**.rs"
+
 name: Check code style
 
 jobs:
