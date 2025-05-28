@@ -191,7 +191,7 @@ impl Display for Operation {
         }
 
         if !self.blocks.is_empty() {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         for block in &self.blocks {
@@ -209,6 +209,12 @@ pub struct Block {
 
     head: Option<Ptr>,
     tail: Option<Ptr>,
+}
+
+impl Default for Block {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Block {

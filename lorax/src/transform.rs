@@ -21,7 +21,7 @@ impl<'a> RewritingCtx<'a> {
         let ptr = self.block.pool.alloc(op);
 
         if let Some(val) = &mut self.deref_mut(ptr).result {
-            if let None = val.def {
+            if val.def.is_none() {
                 val.def = Some(ptr);
             }
         }
@@ -59,7 +59,7 @@ impl<'a> RewritingCtx<'a> {
     where
         'a: 'b,
     {
-        &self.get().operands.as_slice()
+        self.get().operands.as_slice()
     }
 
     pub fn name(&self) -> &'static str {

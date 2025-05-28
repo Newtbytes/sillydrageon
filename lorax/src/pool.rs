@@ -20,6 +20,12 @@ pub struct Pool<T> {
     objs: Vec<T>,
 }
 
+impl<'a, T> Default for Pool<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a, T> Pool<T> {
     pub fn new() -> Self {
         Pool { objs: Vec::new() }
