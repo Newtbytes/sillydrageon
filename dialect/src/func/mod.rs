@@ -1,4 +1,4 @@
-use lorax::{Block, Operation, Value, def_op};
+use lorax::{Value, def_op};
 
 def_op! {
     func.func(block: Block)

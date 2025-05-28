@@ -9,7 +9,10 @@ use crate::error::CompilerError;
 use crate::parser;
 use crate::parser::ast;
 use dialect::x86;
-use lorax::rewrite_ops;
+use lorax::Context;
+use lorax::Emitter;
+use lorax::Ptr;
+use lorax::link::LinkedList;
 
 const CC: &str = "gcc";
 
@@ -191,22 +194,34 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     // 'tacky' is the option to generate IR
-    let ir = &mut parser::lower_program(&ast);
+    let mut ctx = Context::new();
+    let ir = &mut parser::lower_program(&mut ctx, &ast);
     if cli.tacky {
-        println!("{}", ir);
+        println!("{}", Emitter::new(ir, &ctx));
         return Ok(());
     }
 
     // codegen
 
     // TODO: put this somewhere else
+    let pass = x86::rules();
 
-    rewrite_ops(ir, x86::rules());
+    let num_blocks = ctx.blocks.len();
+    for block_ptr in 0..num_blocks {
+        let block = ctx.blocks.deref_mut(block_ptr.into());
 
-    println!("{}", ir);
+        let ops = block.iter(&ctx.ops).filter_map(|op| op.get_result().ptr());
+        let ops: Vec<Ptr> = ops.collect();
+
+        for op in ops {
+            pass.apply_one(&mut ctx.ops, block, op);
+        }
+    }
+
+    println!("{}", Emitter::new(ir, &ctx));
 
     if cli.codegen {
-        println!("{}", ir);
+        println!("{}", Emitter::new(ir, &ctx));
         return Ok(());
     }
 
