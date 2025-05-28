@@ -1,32 +1,27 @@
-use lorax::{RewriteRule, RewritingCtx};
+use lorax::{Block, Operation, Pool, Ptr};
 
 use super::{
     ops::*,
     state::{rbp, rsp},
 };
 
-pub struct LowerMem;
-impl<'block> RewriteRule<RewritingCtx<'block>> for LowerMem {
-    fn apply(&self, ctx: &mut RewritingCtx<'block>) {
-        match (ctx.name(), ctx.operands()) {
-            ("mem.alloca", &[size]) => {
-                let rsp = ctx.insert_behind(rsp());
-                let rsp = ctx.result_of(rsp);
-                ctx.replace(subq(size, rsp));
-            }
+pub fn lower_mem(ctx: &mut Pool<Operation>, bl: &mut Block, op_ptr: Ptr) {
+    let op = ctx.deref(op_ptr);
 
-            // function epilogue
-            ("x86.ret", _) => {
-                let rbp = ctx.insert_behind(rbp());
-                let rsp = ctx.insert_behind(rsp());
-
-                let rbp = ctx.result_of(rbp);
-                let rsp = ctx.result_of(rsp);
-
-                ctx.insert_behind(mov(rbp, rsp));
-                ctx.insert_behind(popq(rbp));
-            }
-            _ => (),
+    match (op.name, op.operands.as_slice()) {
+        ("mem.alloca", &[size]) => {
+            let rsp = bl.insert_behind(ctx, op_ptr, rsp());
+            bl.replace(ctx, op_ptr, subq(size, rsp));
         }
+
+        // function epilogue
+        ("x86.ret", _) => {
+            let rbp = bl.insert_behind(ctx, op_ptr, rbp());
+            let rsp = bl.insert_behind(ctx, op_ptr, rsp());
+
+            bl.insert_behind(ctx, op_ptr, mov(rbp, rsp));
+            bl.insert_behind(ctx, op_ptr, popq(rbp));
+        }
+        _ => (),
     }
 }

@@ -1,9 +1,6 @@
 use lorax::{Block, Operation, Pool, Ptr};
 
-use super::{
-    ops::*,
-    state::{ax, rbp, rsp},
-};
+use super::{ops::*, state::ax};
 
 pub fn lower_func(ctx: &mut Pool<Operation>, ops: &mut Block, op_ptr: Ptr) {
     let op = ctx.deref(op_ptr);
