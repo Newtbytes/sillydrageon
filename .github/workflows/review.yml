@@ -2,14 +2,22 @@ name: Pull Request Review Process
 
 on:
   pull_request:
-    types: [synchronize, opened, reopened, labeled, unlabeled]
+    types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review]
 
 jobs:
   self-approve:
     if: ${{ !contains(github.event.*.labels.*.name, 'self-approved') && github.event.pull_request.user.login == github.repository_owner && github.event.pull_request.requested_reviewers[0] == null}}
-    name: Check Self Approved
+    name: Enforce Self Review
     runs-on: ubuntu-latest
     steps:
-      - name: Check for pull approval
+      - name: Check for at least one review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
-          exit 1
+          reviews=$(gh api repos/$REPO/pulls/$PR_NUMBER/reviews --jq '.[].state')
+          if [[ -z "$reviews" ]]; then
+            echo "No reviews found. Please leave a review comment on the PR before merging."
+            exit 1
+          fi
