@@ -1,16 +1,14 @@
-use lorax::{RewriteRule, RewritingCtx};
+use lorax::{Block, Operation, Pool, Ptr};
 
 use super::{ops::*, state::ax};
 
-pub struct LowerFunc;
-impl<'block> RewriteRule<RewritingCtx<'block>> for LowerFunc {
-    fn apply(&self, ctx: &mut RewritingCtx<'block>) {
-        if let ("func.ret", &[val]) = (ctx.name(), ctx.operands()) {
-            let v0 = ctx.insert_behind(ax());
-            let v0 = ctx.deref(v0).get_result();
-            let _ = ctx.insert_behind(mov(val, v0));
+pub fn lower_func(ctx: &mut Pool<Operation>, ops: &mut Block, op_ptr: Ptr) {
+    let op = ctx.deref(op_ptr);
 
-            ctx.replace(ret());
-        }
+    if let ("func.ret", &[val]) = (op.name, op.operands.as_slice()) {
+        let v0 = ops.insert_behind(ctx, op_ptr, ax());
+        let _ = ops.insert_behind(ctx, op_ptr, mov(val, v0));
+
+        ops.replace(ctx, op_ptr, ret());
     }
 }

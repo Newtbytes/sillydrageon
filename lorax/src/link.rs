@@ -1,4 +1,6 @@
-use crate::{Pool, pool::Ptr};
+use std::marker::PhantomData;
+
+use crate::ctx::{Pool, Ptr};
 
 pub trait LinkedNode {
     fn ahead(&self) -> Option<Ptr>;
@@ -7,16 +9,20 @@ pub trait LinkedNode {
     fn behind_mut(&mut self) -> &mut Option<Ptr>;
 }
 
-pub struct LinkedListIter<'a, T: LinkedNode> {
-    pool: &'a Pool<T>,
+pub struct LinkedListIter<'a, T> {
+    ctx: &'a Pool<T>,
     current: Option<Ptr>,
+    ty: PhantomData<T>,
 }
 
-impl<'a, T: LinkedNode> Iterator for LinkedListIter<'a, T> {
+impl<'a, T> Iterator for LinkedListIter<'a, T>
+where
+    T: LinkedNode + 'a,
+{
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         let curr_ptr = self.current?;
-        let node = self.pool.deref(curr_ptr);
+        let node: &T = self.ctx.deref(curr_ptr);
         self.current = node.ahead();
         Some(node)
     }
@@ -28,36 +34,12 @@ pub trait LinkedList<T: LinkedNode> {
     fn head_mut(&mut self) -> &mut Option<Ptr>;
     fn tail_mut(&mut self) -> &mut Option<Ptr>;
 
-    fn pool(&self) -> &Pool<T>;
-    fn pool_mut(&mut self) -> &mut Pool<T>;
-
-    fn insert_behind(&mut self, root: Ptr, inserted: T) -> Ptr {
-        let pool = self.pool_mut();
-        let inserted = pool.alloc(inserted);
-
-        if let Some(behind) = *pool.deref_mut(root).behind_mut() {
-            // link up inserted node between the old behind node and the root
-            *pool.deref_mut(inserted).behind_mut() = Some(behind);
-            *pool.deref_mut(inserted).ahead_mut() = Some(root);
-
-            // the old behind node now points to inserted
-            *pool.deref_mut(behind).ahead_mut() = Some(inserted);
-
-            // point the root's behind ptr to the inserted node
-            *pool.deref_mut(root).behind_mut() = Some(inserted);
-        }
-
-        inserted
-    }
-
-    fn push(&mut self, node: T) -> Ptr {
-        let node = self.pool_mut().alloc(node);
-
+    fn push(&mut self, ctx: &mut Pool<T>, node: Ptr) -> Ptr {
         if let Some(tail_ptr) = *self.tail_mut() {
-            let tail = self.pool_mut().deref_mut(tail_ptr);
+            let tail: &mut T = ctx.deref_mut(tail_ptr);
             *tail.ahead_mut() = Some(node);
 
-            let node = self.pool_mut().deref_mut(node);
+            let node: &mut T = ctx.deref_mut(node);
             *node.behind_mut() = Some(tail_ptr)
         }
 
@@ -70,18 +52,51 @@ pub trait LinkedList<T: LinkedNode> {
         node
     }
 
-    fn iter(&self) -> LinkedListIter<T> {
+    fn insert_behind(&self, ctx: &mut Pool<T>, root: Ptr, inserted: Ptr) -> Ptr {
+        if let Some(behind) = *ctx.deref_mut(root).behind_mut() {
+            // link up inserted node between the old behind node and the root
+            *ctx.deref_mut(inserted).behind_mut() = Some(behind);
+            *ctx.deref_mut(inserted).ahead_mut() = Some(root);
+
+            // the old behind node now points to inserted
+            *ctx.deref_mut(behind).ahead_mut() = Some(inserted);
+
+            // point the root's behind ptr to the inserted node
+            *ctx.deref_mut(root).behind_mut() = Some(inserted);
+        }
+
+        inserted
+    }
+
+    fn replace(&self, ctx: &mut Pool<T>, root_ptr: Ptr, mut new: T) {
+        let root = ctx.get(root_ptr);
+
+        if let Some(root) = root {
+            *new.ahead_mut() = root.ahead();
+            *new.behind_mut() = root.behind();
+
+            *ctx.deref_mut(root_ptr) = new;
+        }
+    }
+
+    fn iter<'a>(&self, ctx: &'a Pool<T>) -> LinkedListIter<'a, T> {
         LinkedListIter {
-            pool: self.pool(),
+            ctx,
             current: *self.head(),
+            ty: PhantomData,
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::{Block, Operation, Value, attr::AttributeMap};
+
+    use crate::{
+        Block, Context, Operation, Value,
+        attr::AttributeMap,
+        link::{LinkedList, LinkedNode},
+    };
+
     use proptest::prelude::*;
 
     fn dummy(src: Value, dst: Value) -> Operation {
@@ -89,7 +104,7 @@ mod test {
             name: "test.dummy",
             operands: vec![src],
             blocks: Vec::new(),
-            result: Some(dst),
+            result: dst,
             attributes: AttributeMap::new(),
             behind: None,
             ahead: None,
@@ -103,87 +118,119 @@ mod test {
     #[test]
     fn push_updates_head_tail() {
         let mut bl = Block::new();
+        let mut ctx = Context::new();
 
         assert_eq!(*bl.head(), None);
         assert_eq!(*bl.tail(), None);
 
-        let ptr = bl.push(dummy(val(), val()));
+        let ptr = bl.push(&mut ctx, dummy(val(), val()));
 
-        assert_eq!(*bl.head(), Some(ptr));
-        assert_eq!(*bl.tail(), Some(ptr));
+        assert_eq!(*bl.head(), ptr.ptr());
+        assert_eq!(*bl.tail(), ptr.ptr());
     }
 
     #[test]
     fn forward_and_backward_traversal() {
         let mut bl = Block::new();
-        let ptr1 = bl.push(dummy(val(), val()));
-        let ptr2 = bl.push(dummy(val(), val()));
-        let ptr3 = bl.push(dummy(val(), val()));
+        let mut ctx = Context::new();
+
+        let ptr1 = bl.push(&mut ctx, dummy(val(), val()));
+        let ptr2 = bl.push(&mut ctx, dummy(val(), val()));
+        let ptr3 = bl.push(&mut ctx, dummy(val(), val()));
+
+        let ptr1 = ptr1.ptr().unwrap();
+        let ptr2 = ptr2.ptr().unwrap();
+        let ptr3 = ptr3.ptr().unwrap();
+
+        let ctx = &ctx.ops;
 
         // Forward traversal
-        let ptrs: Vec<_> = bl.iter().map(|n| n.ahead()).collect();
+        let ptrs: Vec<Value> = bl.iter(ctx).map(|n| n.result).collect();
         assert_eq!(ptrs.len(), 3);
         // The first node's ahead is Some(ptr2), second is Some(ptr3), third is None
-        assert_eq!(bl.pool().deref(ptr1).ahead(), Some(ptr2));
-        assert_eq!(bl.pool().deref(ptr2).ahead(), Some(ptr3));
-        assert_eq!(bl.pool().deref(ptr3).ahead(), None);
+        assert_eq!(ctx.deref(ptr1).ahead(), ptr2.into());
+        assert_eq!(ctx.deref(ptr2).ahead(), Some(ptr3));
+        assert_eq!(ctx.deref(ptr3).ahead(), None);
 
         // Backward traversal
-        assert_eq!(bl.pool().deref(ptr3).behind(), Some(ptr2));
-        assert_eq!(bl.pool().deref(ptr2).behind(), Some(ptr1));
-        assert_eq!(bl.pool().deref(ptr1).behind(), None);
+        assert_eq!(ctx.deref(ptr3).behind(), Some(ptr2));
+        assert_eq!(ctx.deref(ptr2).behind(), Some(ptr1));
+        assert_eq!(ctx.deref(ptr1).behind(), None);
     }
 
     #[test]
     fn insert_behind_head_and_tail() {
         let mut bl = Block::new();
-        let ptr1 = bl.push(dummy(val(), val()));
-        let ptr2 = bl.push(dummy(val(), val()));
-        let ptr3 = bl.insert_behind(ptr2, dummy(val(), val()));
+        let mut ctx = Context::new();
+
+        let ptr1 = bl.push(&mut ctx, dummy(val(), val()));
+        let ptr2 = bl.push(&mut ctx, dummy(val(), val()));
+
+        let ptr1 = ptr1.ptr().unwrap();
+        let ptr2 = ptr2.ptr().unwrap();
+
+        let ctx = &mut ctx.ops;
+
+        let ptr3 = (&mut bl).insert_behind(ctx, ptr2, dummy(val(), val()));
+        let ptr3 = ptr3.ptr().unwrap();
+
         // ptr3 should be between ptr1 and ptr2
-        assert_eq!(bl.pool().deref(ptr1).ahead(), Some(ptr3));
-        assert_eq!(bl.pool().deref(ptr3).ahead(), Some(ptr2));
-        assert_eq!(bl.pool().deref(ptr2).behind(), Some(ptr3));
-        assert_eq!(bl.pool().deref(ptr3).behind(), Some(ptr1));
+        assert_eq!(ctx.deref(ptr1).ahead(), Some(ptr3));
+        assert_eq!(ctx.deref(ptr3).ahead(), Some(ptr2));
+        assert_eq!(ctx.deref(ptr2).behind(), Some(ptr3));
+        assert_eq!(ctx.deref(ptr3).behind(), Some(ptr1));
     }
 
     #[test]
     fn empty_and_single_element_list() {
         let mut bl = Block::new();
+        let mut ctx = Context::new();
+
         assert!(bl.head().is_none());
         assert!(bl.tail().is_none());
-        let ptr = bl.push(dummy(val(), val()));
+
+        let ptr = bl.push(&mut ctx, dummy(val(), val()));
+        let ptr = ptr.ptr().unwrap();
+
         assert_eq!(bl.head(), bl.tail());
-        assert_eq!(bl.pool().deref(ptr).ahead(), None);
-        assert_eq!(bl.pool().deref(ptr).behind(), None);
+        assert_eq!(ctx.ops.deref(ptr).ahead(), None);
+        assert_eq!(ctx.ops.deref(ptr).behind(), None);
     }
 
     #[test]
     fn consistency_of_pointers_after_multiple_ops() {
         let mut bl = Block::new();
-        let ptrs: Vec<_> = (0..10).map(|_| bl.push(dummy(val(), val()))).collect();
+        let mut ctx = Context::new();
+
+        let ptrs: Vec<_> = (0..10)
+            .filter_map(|_| bl.push(&mut ctx, dummy(val(), val())).ptr())
+            .collect();
+
+        let ctx = &ctx.ops;
+
         // Check forward
         for i in 0..9 {
-            assert_eq!(bl.pool().deref(ptrs[i]).ahead(), Some(ptrs[i + 1]));
+            assert_eq!(ctx.deref(ptrs[i]).ahead(), Some(ptrs[i + 1]));
         }
-        assert_eq!(bl.pool().deref(ptrs[9]).ahead(), None);
+        assert_eq!(ctx.deref(ptrs[9]).ahead(), None);
         // Check backward
         for i in 1..10 {
-            assert_eq!(bl.pool().deref(ptrs[i]).behind(), Some(ptrs[i - 1]));
+            assert_eq!(ctx.deref(ptrs[i]).behind(), Some(ptrs[i - 1]));
         }
-        assert_eq!(bl.pool().deref(ptrs[0]).behind(), None);
+        assert_eq!(ctx.deref(ptrs[0]).behind(), None);
     }
 
     proptest! {
         #[test]
         fn push_many(count in 0usize..10000) {
             let mut bl = Block::new();
+            let mut ctx = Context::new();
 
             for _ in 0..count {
-                let _ = bl.push(dummy(val(), val()));
+                let _ = bl.push(&mut ctx, dummy(val(), val()));
             }
 
-            prop_assert_eq!(bl.len(), count);
+            prop_assert_eq!(bl.iter(&ctx.ops).count(), count);
         }
     }
 }
