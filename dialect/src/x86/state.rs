@@ -1,4 +1,4 @@
-use lorax::{Operation, Value, def_op};
+use lorax::{Operation, def_op};
 
 def_op! {
     x86.ax()

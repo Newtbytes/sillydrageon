@@ -23,9 +23,9 @@ impl From<Ptr> for Value {
     }
 }
 
-impl Into<Ptr> for Value {
-    fn into(self) -> Ptr {
-        self.ptr
+impl From<Value> for Ptr {
+    fn from(val: Value) -> Self {
+        val.ptr
     }
 }
 
