@@ -22,7 +22,7 @@ pub struct Emitter<'a, Obj, Target: EmitTarget> {
 
 impl<Obj: Emit<Target>, Target: EmitTarget> Display for Emitter<'_, Obj, Target> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.obj.emit(&self.ctx, f)
+        self.obj.emit(self.ctx, f)
     }
 }
 
