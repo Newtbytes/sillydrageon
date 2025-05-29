@@ -177,6 +177,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         .ok_or_else(|| CompilerError::Parser("Invalid source file".to_string()))?;
 
     let src_file = preprocess(file)?;
+    let asm_file = src_file.to_kind(ProcFileKind::Assembly);
     let src = src_file.read()?;
 
     // tokenization
@@ -226,6 +227,8 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     }
 
     println!("{}", emit::<_, x86::EmitX86>(&ctx, ir));
+
+    asm_file.write(format!("{}", emit::<_, x86::EmitX86>(&ctx, ir)))?;
 
     Ok(())
 }
