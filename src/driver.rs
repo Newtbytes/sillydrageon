@@ -10,8 +10,9 @@ use crate::parser;
 use crate::parser::ast;
 use dialect::x86;
 use lorax::Context;
-use lorax::Emitter;
+use lorax::EmitIR;
 use lorax::Ptr;
+use lorax::emit;
 use lorax::link::LinkedList;
 
 const CC: &str = "gcc";
@@ -176,7 +177,6 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         .ok_or_else(|| CompilerError::Parser("Invalid source file".to_string()))?;
 
     let src_file = preprocess(file)?;
-    let asm_file = src_file.to_kind(ProcFileKind::Assembly);
     let src = src_file.read()?;
 
     // tokenization
@@ -197,7 +197,7 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     let mut ctx = Context::new();
     let ir = &mut parser::lower_program(&mut ctx, &ast);
     if cli.tacky {
-        println!("{}", Emitter::new(ir, &ctx));
+        println!("{}", emit::<_, EmitIR>(&ctx, ir));
         return Ok(());
     }
 
@@ -218,17 +218,14 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
         }
     }
 
-    println!("{}", Emitter::new(ir, &ctx));
+    println!("{}", emit::<_, EmitIR>(&ctx, ir));
 
     if cli.codegen {
-        println!("{}", Emitter::new(ir, &ctx));
+        println!("{}", emit::<_, x86::EmitX86>(&ctx, ir));
         return Ok(());
     }
 
-    todo!()
+    println!("{}", emit::<_, x86::EmitX86>(&ctx, ir));
 
-    // asm_file.write(asm)?;
-    // assemble(asm_file)?;
-
-    // Ok(())
+    Ok(())
 }

@@ -1,9 +1,10 @@
 use std::{fmt::Display, sync::atomic};
 
-use crate::Emit;
+use crate::EmitIR;
 use crate::attr::{Attribute, AttributeMap};
 use crate::ctx::Context;
 use crate::ctx::{Pool, Ptr};
+use crate::io::Emit;
 use crate::link::{LinkedList, LinkedNode};
 
 #[derive(Debug, Clone, Copy)]
@@ -185,8 +186,8 @@ where
     Ok(())
 }
 
-impl Emit for Operation {
-    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Emit<EmitIR> for Operation {
+    fn emit(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.result.ptr.is_some() {
             write!(f, "{} := {} ", self.result, self.name)?;
         } else {
@@ -205,7 +206,7 @@ impl Emit for Operation {
 
         for block in &self.blocks {
             if let Some(block) = ctx.blocks.get(*block) {
-                block.fmt(ctx, f)?;
+                block.emit(ctx, f)?;
             }
         }
 
@@ -297,13 +298,13 @@ impl LinkedList<Operation> for Block {
     }
 }
 
-impl Emit for Block {
-    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Emit<EmitIR> for Block {
+    fn emit(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, ".bb{}:", self.id)?;
 
         for op in self.iter(&ctx.ops) {
             write!(f, "\t")?;
-            Emit::fmt(op, ctx, f)?;
+            op.emit(ctx, f)?;
             writeln!(f)?;
         }
 
