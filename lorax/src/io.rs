@@ -1,30 +1,34 @@
-use std::fmt::{self, Display};
+use std::fmt::{self, Display, Formatter};
 
 use crate::Context;
 
-pub trait Emit {
-    fn fmt(&self, ctx: &Context, f: &mut std::fmt::Formatter<'_>) -> fmt::Result;
+pub trait EmitTarget {
+    type Ctx;
 }
 
-impl<T: Display> Emit for T {
-    fn fmt(&self, _: &Context, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self, f)
+pub struct EmitIR {}
+impl EmitTarget for EmitIR {
+    type Ctx = Context;
+}
+
+pub trait Emit<T: EmitTarget> {
+    fn emit(&self, ctx: &<T as EmitTarget>::Ctx, f: &mut Formatter<'_>) -> fmt::Result;
+}
+
+pub struct Emitter<'a, Obj, Target: EmitTarget> {
+    pub(crate) ctx: &'a Target::Ctx,
+    pub(crate) obj: &'a Obj,
+}
+
+impl<Obj: Emit<Target>, Target: EmitTarget> Display for Emitter<'_, Obj, Target> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.obj.emit(self.ctx, f)
     }
 }
 
-pub struct Emitter<'a, T: Emit> {
-    obj: &'a T,
-    ctx: &'a Context,
-}
-
-impl<'a, T: Emit> Emitter<'a, T> {
-    pub fn new(obj: &'a T, ctx: &'a Context) -> Self {
-        Self { obj, ctx }
-    }
-}
-
-impl<T: Emit> Display for Emitter<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.obj.fmt(self.ctx, f)
-    }
+pub fn emit<'a, Obj, Target: EmitTarget>(
+    ctx: &'a Target::Ctx,
+    obj: &'a Obj,
+) -> Emitter<'a, Obj, Target> {
+    Emitter { ctx, obj }
 }

@@ -19,3 +19,17 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Fix clippy lints
+
+  cargo_shear:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      
+      - name: Install cargo-shear
+        run: cargo binstall --no-confirm cargo-shear
+      
+      - run: cargo shear
