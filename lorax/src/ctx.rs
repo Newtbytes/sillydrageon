@@ -90,6 +90,12 @@ impl<T> Index<usize> for Pool<T> {
     }
 }
 
+impl<T> crate::ctx::ContextImpl<T> for Pool<T> {
+    fn get_pool(&mut self) -> &mut Pool<T> {
+        self
+    }
+}
+
 pub struct Context
 where
     Self: ContextImpl<Block> + ContextImpl<Operation>,

@@ -196,9 +196,11 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
 
     // 'tacky' is the option to generate IR
     let mut ctx = Context::new();
-    let ir = &mut parser::lower_program(&mut ctx, &ast);
+    let ir = parser::lower_program(&mut ctx, &ast);
+    let ir = ctx.blocks.alloc(ir);
+
     if cli.tacky {
-        println!("{}", emit::<_, EmitIR>(&ctx, ir));
+        println!("{}", emit::<_, EmitIR>(&ctx, ctx.blocks.deref(ir)));
         return Ok(());
     }
 
@@ -209,15 +211,17 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
 
     let num_blocks = ctx.blocks.len();
     for block_ptr in 0..num_blocks {
-        let block = ctx.blocks.deref_mut(block_ptr.into());
+        let block = ctx.blocks.deref(block_ptr.into());
 
         let ops = block.iter(&ctx.ops).filter_map(|op| op.get_result().ptr());
         let ops: Vec<Ptr> = ops.collect();
 
         for op in ops {
-            pass.apply_one(&mut ctx.ops, block, op);
+            pass.apply_one(&mut ctx, block_ptr.into(), op);
         }
     }
+
+    let ir = ctx.blocks.deref(ir);
 
     println!("{}", emit::<_, EmitIR>(&ctx, ir));
 
