@@ -180,7 +180,7 @@ mod test {
 
         let ctx = &mut ctx.ops;
 
-        let ptr3 = (&mut bl).insert_behind(ctx, ptr2, dummy(val(), val()));
+        let ptr3 = bl.insert_behind(ctx, ptr2, dummy(val(), val()));
         let ptr3 = ptr3.ptr().unwrap();
 
         // ptr3 should be between ptr1 and ptr2
