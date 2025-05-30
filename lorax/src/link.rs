@@ -52,18 +52,27 @@ pub trait LinkedList<T: LinkedNode> {
         node
     }
 
-    fn insert_behind(&self, ctx: &mut Pool<T>, root: Ptr, inserted: Ptr) -> Ptr {
+    fn insert_behind(&mut self, ctx: &mut Pool<T>, root: Ptr, inserted: Ptr) -> Ptr {
+        *ctx.deref_mut(inserted).ahead_mut() = Some(root);
+
         if let Some(behind) = *ctx.deref_mut(root).behind_mut() {
             // link up inserted node between the old behind node and the root
             *ctx.deref_mut(inserted).behind_mut() = Some(behind);
-            *ctx.deref_mut(inserted).ahead_mut() = Some(root);
 
             // the old behind node now points to inserted
             *ctx.deref_mut(behind).ahead_mut() = Some(inserted);
 
             // point the root's behind ptr to the inserted node
             *ctx.deref_mut(root).behind_mut() = Some(inserted);
+        } else {
+            // behind is the list head
+            if let Some(head) = self.head_mut() {
+                *head = inserted
+            }
         }
+
+        // point the root's behind ptr to the inserted node
+        *ctx.deref_mut(root).behind_mut() = Some(inserted);
 
         inserted
     }

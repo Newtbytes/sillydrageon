@@ -12,7 +12,6 @@ pub fn add_fn_frame(ctx: &mut Context, _: Ptr, op_ptr: Ptr) {
             if let (Some(head), Some(tail)) = (*bl.head(), *bl.tail()) {
                 let ctx = &mut ctx.ops;
 
-                // FIXME: this doesn't actually insert start_frame before head
                 let frame = bl.insert_behind(ctx, head, start_frame());
                 bl.insert_behind(ctx, tail, end_frame(frame));
             }
