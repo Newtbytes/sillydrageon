@@ -12,6 +12,7 @@ on:
       - "lorax/**"
       - "dialect/**"
       - "tests/**"
+      - "**.rs"
 
 env:
   CARGO_TERM_COLOR: always
