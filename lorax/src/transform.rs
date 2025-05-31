@@ -1,7 +1,4 @@
-use crate::{
-    Context, Operation, Ptr,
-    ctx::{Pool, get_pool},
-};
+use crate::{Context, Ptr};
 
 pub struct PoolTransform<Ctx> {
     rewrite: Box<dyn Fn(&mut Ctx, Ptr, Ptr)>,
@@ -10,17 +7,6 @@ pub struct PoolTransform<Ctx> {
 impl PoolTransform<Context> {
     pub fn apply(&self, ctx: &mut Context, block: Ptr, op: Ptr) {
         (self.rewrite)(ctx, block, op)
-    }
-}
-
-impl<F> From<&'static F> for PoolTransform<Context>
-where
-    F: Fn(&mut Pool<Operation>, Ptr, Ptr),
-{
-    fn from(f: &'static F) -> Self {
-        Self {
-            rewrite: Box::new(|ctx, bl, ptr| f(get_pool(ctx), bl, ptr)),
-        }
     }
 }
 
