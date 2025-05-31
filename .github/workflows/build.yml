@@ -4,7 +4,14 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - ".github/workflows/build.yml"
+      - "Cargo.*"
+      - "src/**"
+      - "lorax/**"
+      - "dialect/**"
+      - "tests/**"
+      - "**.rs"
 
 env:
   CARGO_TERM_COLOR: always
