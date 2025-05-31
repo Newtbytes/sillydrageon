@@ -15,13 +15,12 @@ pub fn lower_mem(ctx: &mut Context, bl_ptr: Ptr, op_ptr: Ptr) {
             bl.replace(&mut ctx.ops, op_ptr, subq(size, rsp));
         }
 
-        // function epilogue
-        ("x86.ret", _) => {
+        ("mach.end_frame", &[_]) => {
             let rbp = bl.insert_behind(&mut ctx.ops, op_ptr, rbp());
             let rsp = bl.insert_behind(&mut ctx.ops, op_ptr, rsp());
 
             bl.insert_behind(&mut ctx.ops, op_ptr, mov(rbp, rsp));
-            bl.insert_behind(&mut ctx.ops, op_ptr, popq(rbp));
+            bl.replace(&mut ctx.ops, op_ptr, popq(rbp));
         }
         _ => (),
     }

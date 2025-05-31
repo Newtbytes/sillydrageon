@@ -11,7 +11,6 @@ use crate::parser::ast;
 use dialect::x86;
 use lorax::Context;
 use lorax::EmitIR;
-use lorax::Ptr;
 use lorax::emit;
 use lorax::link::LinkedList;
 
@@ -210,14 +209,16 @@ pub fn run_compiler(cli: Cli) -> Result<(), CompilerError> {
     let pass = x86::rules();
 
     let num_blocks = ctx.blocks.len();
-    for block_ptr in 0..num_blocks {
-        let block = ctx.blocks.deref(block_ptr.into());
+    for _ in 0..2 {
+        for block_ptr in 0..num_blocks {
+            let block = ctx.blocks.deref(block_ptr.into());
 
-        let ops = block.iter(&ctx.ops).filter_map(|op| op.get_result().ptr());
-        let ops: Vec<Ptr> = ops.collect();
+            let mut op_ptr = *block.head();
 
-        for op in ops {
-            pass.apply_one(&mut ctx, block_ptr.into(), op);
+            while let Some(op) = op_ptr {
+                pass.apply_one(&mut ctx, block_ptr.into(), op);
+                op_ptr = ctx.ops.deref(op).ahead;
+            }
         }
     }
 
