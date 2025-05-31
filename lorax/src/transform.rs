@@ -6,7 +6,7 @@ pub struct PoolTransform<Ctx> {
 
 impl PoolTransform<Context> {
     pub fn apply(&self, ctx: &mut Context, block: Ptr, op: Ptr) {
-        (self.rewrite)(ctx, block, op)
+        (self.rewrite)(ctx, block, op);
     }
 }
 
@@ -21,10 +21,12 @@ impl Default for PassManager {
 }
 
 impl PassManager {
+    #[must_use]
     pub fn new() -> Self {
         Self { rules: Vec::new() }
     }
 
+    #[must_use]
     pub fn add_rule(mut self, rule: impl Fn(&mut Context, Ptr, Ptr) + 'static) -> Self {
         self.rules.push(PoolTransform {
             rewrite: Box::new(rule),

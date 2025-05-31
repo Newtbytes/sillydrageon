@@ -14,12 +14,15 @@ pub struct Value {
 }
 
 impl Value {
+    #[must_use]
+    #[inline]
     fn unique_id() -> usize {
         static TMP_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
         TMP_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
     }
 
+    #[must_use]
     pub fn new(ptr: Option<Ptr>) -> Self {
         Self {
             id: Self::unique_id(),
@@ -27,6 +30,7 @@ impl Value {
         }
     }
 
+    #[must_use]
     pub fn ptr(&self) -> Option<Ptr> {
         self.ptr
     }
@@ -77,6 +81,7 @@ impl Operation {
         self.blocks.push(ctx.blocks.alloc(block));
     }
 
+    #[must_use]
     pub fn get_result(&self) -> Value {
         self.result
     }
@@ -176,11 +181,11 @@ where
     I::Item: Display,
 {
     if let Some(item) = list.next() {
-        write!(f, "{}", item)?;
+        write!(f, "{item}")?;
     }
 
     for item in list {
-        write!(f, ", {}", item)?;
+        write!(f, ", {item}")?;
     }
 
     Ok(())
@@ -229,11 +234,14 @@ impl Default for Block {
 }
 
 impl Block {
+    #[must_use]
+    #[inline]
     pub(crate) fn unique_id() -> usize {
         static BLOCK_ID_COUNTER: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
         BLOCK_ID_COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
     }
 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             id: Self::unique_id(),

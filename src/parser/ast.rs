@@ -1,5 +1,5 @@
 // tokens
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenKind {
     Identifier, // a-z
     Constant,   // 0-9

@@ -14,10 +14,12 @@ impl<T> Default for RewriteRuleSet<T> {
 }
 
 impl<T> RewriteRuleSet<T> {
+    #[must_use]
     pub fn new() -> Self {
         Self { rules: Vec::new() }
     }
 
+    #[must_use]
     pub fn add_rule<R: RewriteRule<T> + 'static>(mut self, rule: R) -> Self {
         self.rules.push(Box::new(rule));
         self
