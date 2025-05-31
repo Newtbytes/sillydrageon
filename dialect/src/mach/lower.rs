@@ -12,6 +12,8 @@ pub fn add_fn_frame(ctx: &mut Context, _: Ptr, op_ptr: Ptr) {
             if let (Some(head), Some(tail)) = (*bl.head(), *bl.tail()) {
                 let ctx = &mut ctx.ops;
 
+                // FIXME: the frame should start at the entry block and end at the exit block.
+                // Once entry/exit blocks exist, this should be handled properly
                 let frame = bl.insert_behind(ctx, head, start_frame());
                 bl.insert_behind(ctx, tail, end_frame(frame));
             }
