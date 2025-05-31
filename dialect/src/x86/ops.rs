@@ -5,6 +5,18 @@ def_op! {
 }
 
 def_op! {
+    x86.subq(num: Value, reg: Value) -> reg
+}
+
+def_op! {
+    x86.pushq(num: Value) -> None
+}
+
+def_op! {
+    x86.popq(num: Value) -> None
+}
+
+def_op! {
     x86.neg(src: Value) -> src
 }
 
