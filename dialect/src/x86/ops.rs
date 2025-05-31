@@ -5,10 +5,6 @@ def_op! {
 }
 
 def_op! {
-    x86.svar(offset: Value) -> Value
-}
-
-def_op! {
     x86.subq(num: Value, reg: Value) -> reg
 }
 
