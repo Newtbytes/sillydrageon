@@ -5,7 +5,7 @@ use super::{
     state::{rbp, rsp},
 };
 
-pub fn lower_mem(ctx: &mut Context, bl_ptr: Ptr, op_ptr: Ptr) {
+pub fn lower_frame(ctx: &mut Context, bl_ptr: Ptr, op_ptr: Ptr) {
     let bl = ctx.blocks.deref_mut(bl_ptr);
     let op = ctx.ops.deref(op_ptr);
 
