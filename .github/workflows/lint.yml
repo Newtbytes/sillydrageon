@@ -1,7 +1,5 @@
 on:
   push:
-
-  pull_request:
     paths:
       - ".github/workflows/lint.yml"
       - "Cargo.*"
