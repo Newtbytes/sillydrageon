@@ -132,6 +132,7 @@ impl Iterator for Scanner<'_> {
                     self.eat_identifier();
 
                     if self.at_word_bound() {
+                        // handle keywords
                         match self.consumed.as_str() {
                             "void" => tk::Void,
                             "int" => tk::Int,
@@ -140,6 +141,7 @@ impl Iterator for Scanner<'_> {
                             _ => tk::Identifier,
                         }
                     } else {
+                        // if the next character isn't \b
                         tk::Error("Invalid identifier")
                     }
                 }
