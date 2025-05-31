@@ -15,6 +15,6 @@ pub fn rules<'ctx>() -> PassManager {
     PassManager::new()
         .add_rule(from_arith::lower_unop)
         .add_rule(from_func::lower_func)
-        .add_rule(mach::lower::add_fn_frame)
+        .add_rule(mach::add_fn_frame)
         .add_rule(from_mem::lower_mem)
 }

@@ -1,2 +1,4 @@
-pub mod lower;
-pub mod ops;
+mod lower;
+mod ops;
+
+pub use lower::add_fn_frame;
