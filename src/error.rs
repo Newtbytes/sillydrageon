@@ -19,8 +19,8 @@ impl From<std::io::Error> for CompilerError {
 impl fmt::Display for CompilerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CompilerError::IO(e) => write!(f, "I/O error: {}", e),
-            CompilerError::Parser(msg) => write!(f, "Parse error: {}", msg),
+            CompilerError::IO(e) => write!(f, "I/O error: {e}"),
+            CompilerError::Parser(msg) => write!(f, "Parse error: {msg}"),
             CompilerError::Lexer(src, tok) => {
                 write!(
                     f,
@@ -38,7 +38,7 @@ impl fmt::Display for CompilerError {
 
 impl fmt::Debug for CompilerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 

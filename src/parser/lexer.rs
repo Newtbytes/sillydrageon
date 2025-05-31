@@ -54,7 +54,7 @@ impl Scanner<'_> {
     where
         P: FnMut(&char) -> bool,
     {
-        self.eat_while(|c| !predicate(c))
+        self.eat_while(|c| !predicate(c));
     }
 
     fn empty_consumed(&mut self) {
@@ -102,7 +102,7 @@ impl Iterator for Scanner<'_> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Token> {
-        use TokenKind::*;
+        use TokenKind as tk;
 
         // skip whitespace
         self.eat_while(|&c| c.is_whitespace());
@@ -111,37 +111,38 @@ impl Iterator for Scanner<'_> {
         let kind = match self.eat() {
             Some(c) => match c {
                 '-' => match self.one_ahead() {
-                    Some('-') => Decrement,
-                    Some(_) => Negate,
+                    Some('-') => tk::Decrement,
+                    Some(_) => tk::Negate,
                     None => {
                         return None;
                     }
                 },
 
-                '~' => Complement,
+                '~' => tk::Complement,
 
-                '(' => LParen,
-                ')' => RParen,
+                '(' => tk::LParen,
+                ')' => tk::RParen,
 
-                '{' => LBrace,
-                '}' => RBrace,
+                '{' => tk::LBrace,
+                '}' => tk::RBrace,
 
-                ';' => Semicolon,
+                ';' => tk::Semicolon,
 
                 'a'..='z' | 'A'..='Z' | '_' => {
                     self.eat_identifier();
 
-                    match self.at_word_bound() {
+                    if self.at_word_bound() {
                         // handle keywords
-                        true => match self.consumed.as_str() {
-                            "void" => Void,
-                            "int" => Int,
-                            "return" => Return,
+                        match self.consumed.as_str() {
+                            "void" => tk::Void,
+                            "int" => tk::Int,
+                            "return" => tk::Return,
 
-                            _ => Identifier,
-                        },
+                            _ => tk::Identifier,
+                        }
+                    } else {
                         // if the next character isn't \b
-                        false => Error("Invalid identifier"),
+                        tk::Error("Invalid identifier")
                     }
                 }
 
@@ -149,13 +150,13 @@ impl Iterator for Scanner<'_> {
                     self.eat_int_literal();
 
                     if self.at_word_bound() {
-                        Constant
+                        tk::Constant
                     } else {
-                        Error("Invalid constant")
+                        tk::Error("Invalid constant")
                     }
                 }
 
-                _ => Error(""),
+                _ => tk::Error(""),
             },
             None => {
                 return None;
@@ -163,7 +164,7 @@ impl Iterator for Scanner<'_> {
         };
 
         // synchronize by eating until synchronization point
-        if let Error(_) = kind {
+        if let tk::Error(_) = kind {
             self.eat_until(|&c| !is_word(&c));
         }
 

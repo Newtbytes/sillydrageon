@@ -1,7 +1,7 @@
 use lorax::{Context, Ptr};
 
 use super::{
-    ops::*,
+    ops::{mov, popq},
     state::{rbp, rsp},
 };
 

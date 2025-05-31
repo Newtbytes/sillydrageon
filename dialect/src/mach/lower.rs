@@ -18,5 +18,5 @@ pub fn add_fn_frame(ctx: &mut Context, _: Ptr, op_ptr: Ptr) {
                 bl.insert_behind(ctx, tail, end_frame(frame));
             }
         }
-    };
+    }
 }

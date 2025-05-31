@@ -8,6 +8,7 @@ pub struct Source {
 }
 
 impl Source {
+    #[must_use]
     pub fn get_span(&self, tok: &Token) -> Option<Span> {
         self.pos_of(tok.offset).map(|pos| Span {
             pos,
@@ -52,7 +53,7 @@ impl fmt::Display for Span<'_> {
 
         let pointer = " ".repeat(self.pos.col) + &"^".repeat(self.len);
 
-        write!(f, "{}", line.to_owned() + "\n" + &pointer)
+        write!(f, "{line}\n{pointer}")
     }
 }
 
@@ -71,9 +72,8 @@ fn get_pos(src: &Source, offset: usize) -> Option<Position> {
                 col,
                 src,
             });
-        } else {
-            line_offset += line.len() + 1;
         }
+        line_offset += line.len() + 1;
     }
 
     None

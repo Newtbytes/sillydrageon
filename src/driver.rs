@@ -55,7 +55,7 @@ impl Display for ProcFileKind {
             ProcFileKind::Binary => "Binary",
         };
 
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -73,8 +73,7 @@ impl<'a> ProcFile<'a> {
         let kind = path
             .extension()
             .and_then(|ext| ext.to_str())
-            .map(ProcFileKind::from)
-            .unwrap_or(ProcFileKind::Binary);
+            .map_or(ProcFileKind::Binary, ProcFileKind::from);
 
         Some(Self {
             name,
@@ -83,6 +82,7 @@ impl<'a> ProcFile<'a> {
         })
     }
 
+    #[must_use]
     pub fn from_fn(filename: &'a str) -> Option<Self> {
         Self::from_path(Path::new(filename))
     }
@@ -91,6 +91,7 @@ impl<'a> ProcFile<'a> {
         self.path.join(self.name.clone() + self.kind.get_ext())
     }
 
+    #[must_use]
     pub fn to_kind(&self, kind: ProcFileKind) -> Self {
         let mut cpy = self.clone();
         cpy.kind = kind;
@@ -117,13 +118,15 @@ impl Drop for ProcFile<'_> {
 }
 
 pub fn preprocess(src: ProcFile) -> io::Result<ProcFile> {
-    let mut dst = src.clone();
+    let src_fn = src.get_fn();
+
+    let mut dst = src;
     dst.kind = ProcFileKind::Preprocessed;
 
     Command::new(CC)
         .arg("-E")
         .arg("-P")
-        .arg(src.get_fn())
+        .arg(src_fn)
         .arg("-o")
         .arg(dst.get_fn())
         .output()?;
@@ -132,11 +135,13 @@ pub fn preprocess(src: ProcFile) -> io::Result<ProcFile> {
 }
 
 pub fn assemble(src: ProcFile) -> io::Result<ProcFile> {
-    let mut dst = src.clone();
+    let src_fn = src.get_fn();
+
+    let mut dst = src;
     dst.kind = ProcFileKind::Binary;
 
     Command::new(CC)
-        .arg(src.get_fn())
+        .arg(src_fn)
         .arg("-o")
         .arg(dst.get_fn())
         .output()?;
