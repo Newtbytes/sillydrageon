@@ -1,6 +1,6 @@
 use std::iter;
 
-use super::ast::*;
+use super::ast::{Decl, Expr, Program, Stmt, Token, TokenKind, UnaryOp};
 
 type ParseResult<T> = Result<T, String>;
 
@@ -46,7 +46,7 @@ impl<I: iter::Iterator<Item = Token>> Parser<'_, I> {
         match self.take()?.kind {
             TokenKind::Complement => Ok(UnaryOp::Complement),
             TokenKind::Negate => Ok(UnaryOp::Negate),
-            _ => Err("".to_owned()),
+            _ => Err(String::new()),
         }
     }
 

@@ -40,7 +40,7 @@ pub trait LinkedList<T: LinkedNode> {
             *tail.ahead_mut() = Some(node);
 
             let node: &mut T = ctx.deref_mut(node);
-            *node.behind_mut() = Some(tail_ptr)
+            *node.behind_mut() = Some(tail_ptr);
         }
 
         *self.tail_mut() = Some(node);
@@ -67,7 +67,7 @@ pub trait LinkedList<T: LinkedNode> {
         } else {
             // behind is the list head
             if let Some(head) = self.head_mut() {
-                *head = inserted
+                *head = inserted;
             }
         }
 

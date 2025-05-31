@@ -8,6 +8,7 @@ pub struct Ptr {
 }
 
 impl Ptr {
+    #[must_use]
     pub fn new(idx: usize) -> Self {
         Self { idx }
     }
@@ -24,13 +25,14 @@ pub struct Pool<T> {
     objs: Vec<T>,
 }
 
-impl<'a, T> Default for Pool<T> {
+impl<T> Default for Pool<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl<'a, T> Pool<T> {
+    #[must_use]
     pub fn new() -> Self {
         Pool { objs: Vec::new() }
     }
@@ -39,6 +41,7 @@ impl<'a, T> Pool<T> {
         self.objs.reserve(count);
     }
 
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Pool {
             objs: Vec::with_capacity(capacity),
@@ -53,6 +56,7 @@ impl<'a, T> Pool<T> {
         }
     }
 
+    #[must_use]
     pub fn get(&self, ptr: Ptr) -> Option<&T> {
         self.objs.get(ptr.idx)
     }
@@ -61,6 +65,7 @@ impl<'a, T> Pool<T> {
         self.objs.get_mut(ptr.idx)
     }
 
+    #[must_use]
     pub fn deref(&'a self, ptr: Ptr) -> &'a T {
         self.get(ptr).expect("Deref of dangling ptr")
     }
@@ -77,6 +82,7 @@ impl<'a, T> Pool<T> {
         self.objs.iter_mut()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.objs.len()
     }
@@ -105,6 +111,7 @@ impl Default for Context {
 }
 
 impl Context {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             blocks: Pool::new(),

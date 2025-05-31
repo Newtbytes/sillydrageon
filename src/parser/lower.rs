@@ -41,7 +41,7 @@ pub fn lower_program(ctx: &mut Context, program: &ast::Program) -> Block {
             let block = ctx.blocks.alloc(block);
             region.push(ctx, func(block));
         }
-    };
+    }
 
     region
 }
