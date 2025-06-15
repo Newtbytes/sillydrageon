@@ -4,6 +4,7 @@ on:
       - ".github/workflows/lint.yml"
       - "Cargo.*"
       - "**.rs"
+  workflow_dispatch:
 
 name: Check code style
 
