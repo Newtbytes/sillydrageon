@@ -10,7 +10,7 @@ dialect = { path = "dialect" }
 
 [dev-dependencies]
 test_each_file = "0.3.4"
-proptest = "1.7.0"
+proptest = "1.9.0"
 
 [workspace]
 members = ["lorax", "dialect"]
