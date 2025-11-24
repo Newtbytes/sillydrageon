@@ -9,14 +9,14 @@ pub struct Source {
 
 impl Source {
     #[must_use]
-    pub fn get_span(&self, tok: &Token) -> Option<Span> {
+    pub fn get_span(&self, tok: &Token) -> Option<Span<'_>> {
         self.pos_of(tok.offset).map(|pos| Span {
             pos,
             len: tok.value.len(),
         })
     }
 
-    fn pos_of(&self, offset: usize) -> Option<Position> {
+    fn pos_of(&self, offset: usize) -> Option<Position<'_>> {
         get_pos(self, offset)
     }
 }
@@ -57,7 +57,7 @@ impl fmt::Display for Span<'_> {
     }
 }
 
-fn get_pos(src: &Source, offset: usize) -> Option<Position> {
+fn get_pos(src: &Source, offset: usize) -> Option<Position<'_>> {
     if offset >= src.text.len() {
         return None;
     }
