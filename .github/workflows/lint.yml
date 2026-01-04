@@ -1,37 +1,27 @@
+name: Check code style
+
 on:
-  push:
+  pull_request:
     paths:
       - ".github/workflows/lint.yml"
       - "Cargo.*"
-      - "**.rs"
+      - "src/**"
+      - "lorax/**"
+      - "dialect/**"
+      - "tests/**"
   workflow_dispatch:
 
-name: Check code style
-
 jobs:
-  clippy_check:
+  lint:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run rustfmt
-        run: cargo fmt --all
+      - name: Run rustfmt check
+        run: cargo fmt --all --check
 
-      - name: Run clippy linter
-        run: cargo clippy --fix --workspace --all-targets --all-features --allow-dirty
-
-      # Commit all changed files back to the repository
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Fix clippy lints
-
-  cargo_shear:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
@@ -39,4 +29,5 @@ jobs:
       - name: Install cargo-shear
         run: cargo binstall --no-confirm cargo-shear
       
-      - run: cargo shear
+      - name: Run cargo-shear
+        run: cargo shear
