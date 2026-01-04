@@ -3,6 +3,15 @@ name: Build & Test
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/build.yml"
+      - "Cargo.*"
+      - "src/**"
+      - "lorax/**"
+      - "dialect/**"
+      - "tests/**"
+      - ".cargo/**"
+      - "rust-toolchain.toml"
   pull_request:
     paths:
       - ".github/workflows/build.yml"
@@ -11,7 +20,8 @@ on:
       - "lorax/**"
       - "dialect/**"
       - "tests/**"
-      - "**.rs"
+      - ".cargo/**"
+      - "rust-toolchain.toml"
   workflow_dispatch:
 
 env:
