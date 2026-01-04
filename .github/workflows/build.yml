@@ -4,14 +4,11 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    paths:
-      - ".github/workflows/build.yml"
-      - "Cargo.*"
-      - "src/**"
-      - "lorax/**"
-      - "dialect/**"
-      - "tests/**"
-      - "**.rs"
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+      - "LICENSE"
+      - "*.txt"
   workflow_dispatch:
 
 env:

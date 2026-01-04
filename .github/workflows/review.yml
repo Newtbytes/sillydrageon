@@ -5,33 +5,31 @@ on:
     types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review]
 
 jobs:
-  self-approve:
-      if: |
-        !contains(join(github.event.pull_request.labels.*.name, ','), 'self-approved') &&
-        github.event.pull_request.user.login == github.repository_owner &&
-        github.event.pull_request.requested_reviewers[0] == null
-
-      name: Enforce Self Approval
-      runs-on: ubuntu-latest
-      steps:
-        - run: exit 1
-
-  self-review:
+  enforce-self-review:
     if: |
-        contains(join(github.event.pull_request.labels.*.name, ','), 'self-approved') &&
-        github.event.pull_request.user.login == github.repository_owner &&
-        github.event.pull_request.requested_reviewers[0] == null
-    name: Enforce Self Review
+      github.event.pull_request.user.login == github.repository_owner &&
+      github.event.pull_request.requested_reviewers[0] == null
+    name: Enforce Self Review Process
     runs-on: ubuntu-latest
     steps:
-      - name: Check for at least one review
+      - name: Check for self-approval label and actual review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          reviews=$(gh api repos/$REPO/pulls/$PR_NUMBER/reviews --jq '.[].state')
-          if [[ -z "$reviews" ]]; then
-            echo "No reviews found. Please leave a review comment on the PR before merging."
+          # Check for label
+          has_label=$(gh api repos/$REPO/pulls/$PR_NUMBER --jq '.labels[] | select(.name=="self-approved") | .name')
+          if [[ -z "$has_label" ]]; then
+            echo "❌ Missing 'self-approved' label. Add it only after reviewing your changes."
             exit 1
           fi
+          
+          # Check for meaningful review
+          reviews=$(gh api repos/$REPO/pulls/$PR_NUMBER/reviews --jq '.[] | select(.state=="APPROVED" or .state=="COMMENTED") | select(.body != "")')
+          if [[ -z "$reviews" ]]; then
+            echo "❌ No substantive review found. Leave actual review comments before merging."
+            exit 1
+          fi
+          
+          echo "✅ Self-review requirements met"
